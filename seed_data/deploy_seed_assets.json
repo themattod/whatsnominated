@@ -1,0 +1,785 @@
+{
+  "meta": {
+    "source_db": "data/oscars.db",
+    "years": [
+      2026
+    ],
+    "tables": [
+      "admin_watch_links",
+      "admin_watch_labels",
+      "admin_posters",
+      "scraped_posters",
+      "admin_banners",
+      "admin_event_modes",
+      "admin_voting_locks",
+      "category_winners"
+    ]
+  },
+  "tables": {
+    "admin_watch_links": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "updated_at"
+      ],
+      "rows": [
+        {
+          "year": 2026,
+          "film_id": "FilmID001",
+          "url": "https://www.justwatch.com/us/movie/sinners",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID002",
+          "url": "https://www.justwatch.com/us/movie/one-battle-after-another",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID003",
+          "url": "https://www.justwatch.com/us/movie/frankenstein",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID004",
+          "url": "https://www.justwatch.com/us/movie/marty-supreme",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID005",
+          "url": "https://www.justwatch.com/us/movie/sentimental-value",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID006",
+          "url": "https://www.justwatch.com/us/movie/hamnet",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID007",
+          "url": "https://www.justwatch.com/us/movie/bugonia",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID008",
+          "url": "https://www.justwatch.com/us/movie/f1",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID009",
+          "url": "https://www.justwatch.com/us/movie/the-secret-agent",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID010",
+          "url": "https://www.justwatch.com/us/movie/train-dreams",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID011",
+          "url": "https://www.justwatch.com/us/movie/avatar-fire-and-ash",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID012",
+          "url": "https://www.justwatch.com/us/movie/blue-moon",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID013",
+          "url": "https://www.justwatch.com/us/movie/kpop-demon-hunters",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID014",
+          "url": "https://www.justwatch.com/us/movie/sir\u0101t",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID015",
+          "url": "https://www.justwatch.com/us/movie/if-i-had-legs-id-kick-you",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID016",
+          "url": "https://www.justwatch.com/us/movie/song-sung-blue",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID017",
+          "url": "https://www.justwatch.com/us/movie/weapons",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID018",
+          "url": "https://www.justwatch.com/us/movie/it-was-just-an-accident",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID019",
+          "url": "https://www.justwatch.com/us/movie/diane-warren-relentless",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID020",
+          "url": "https://www.justwatch.com/us/movie/viva-verdi",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID021",
+          "url": "https://www.justwatch.com/us/movie/the-voice-of-hind-rajab",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID022",
+          "url": "https://www.justwatch.com/us/movie/arco",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID023",
+          "url": "https://www.justwatch.com/us/movie/elio",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID024",
+          "url": "https://www.justwatch.com/us/movie/little-am\u00e9lie",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID025",
+          "url": "https://www.justwatch.com/us/movie/zootopia-2",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID026",
+          "url": "https://www.justwatch.com/us/movie/cutting-through-the-rocks",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID027",
+          "url": "https://www.justwatch.com/us/movie/come-see-me-in-the-good-light",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID028",
+          "url": "https://www.justwatch.com/us/movie/mr-nobody-against-putin",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID029",
+          "url": "https://www.justwatch.com/us/movie/the-alabama-solution",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID030",
+          "url": "https://www.justwatch.com/us/movie/the-perfect-neighbor",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID031",
+          "url": "https://www.justwatch.com/us/movie/kokuho",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID032",
+          "url": "https://www.justwatch.com/us/movie/the-smashing-machine",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID033",
+          "url": "https://www.justwatch.com/us/movie/the-ugly-stepsister",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID034",
+          "url": "https://www.justwatch.com/us/movie/jurassic-world-rebirth",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID035",
+          "url": "https://www.justwatch.com/us/movie/the-lost-bus",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID036",
+          "url": "https://www.justwatch.com/us/movie/butchers-stain",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID037",
+          "url": "https://www.justwatch.com/us/movie/a-friend-of-dorothy",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID038",
+          "url": "https://www.youtube.com/watch?v=dxpjzOLVRR0",
+          "updated_at": "2026-02-20 00:42:58"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID039",
+          "url": "https://www.justwatch.com/us/movie/the-singers",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID040",
+          "url": "https://youtu.be/RuOEEu--j2Y?si=e0Ha19t7snZSa-b9",
+          "updated_at": "2026-02-20 00:43:32"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID041",
+          "url": "https://www.justwatch.com/us/movie/all-the-empty-rooms",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID042",
+          "url": "https://www.justwatch.com/us/movie/armed-only-with-a-camera-the-life-and-death-of-brent-renaud",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID043",
+          "url": "https://www.justwatch.com/us/movie/children-no-more-were-and-are-gone",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID044",
+          "url": "https://www.justwatch.com/us/movie/the-devil-is-busy",
+          "updated_at": "2026-02-19 22:34:53"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID045",
+          "url": "https://www.patreon.com/collection/1957084?view=expanded",
+          "updated_at": "2026-02-20 00:43:49"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID046",
+          "url": "https://www.youtube.com/watch?v=Y5u1XJHr-UE",
+          "updated_at": "2026-02-20 00:44:07"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID047",
+          "url": "https://youtu.be/B4EPW7JUMTM?si=E6bAw-K0hsoYYLR4",
+          "updated_at": "2026-02-20 00:44:20"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID048",
+          "url": "https://www.nfb.ca/film/the-girl-who-cried-pearls/",
+          "updated_at": "2026-02-20 00:44:34"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID049",
+          "url": "https://youtu.be/2Mqa4zfJdx4?si=0bbWRukJOMFgyjCy",
+          "updated_at": "2026-02-20 00:44:56"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID050",
+          "url": "https://www.justwatch.com/us/movie/the-three-sisters",
+          "updated_at": "2026-02-19 22:34:53"
+        }
+      ],
+      "count": 50
+    },
+    "admin_watch_labels": {
+      "columns": [
+        "year",
+        "film_id",
+        "free_to_watch",
+        "updated_at"
+      ],
+      "rows": [
+        {
+          "year": 2026,
+          "film_id": "FilmID038",
+          "free_to_watch": 1,
+          "updated_at": "2026-02-20 00:42:58"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID040",
+          "free_to_watch": 1,
+          "updated_at": "2026-02-20 00:43:32"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID046",
+          "free_to_watch": 1,
+          "updated_at": "2026-02-20 00:44:07"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID047",
+          "free_to_watch": 1,
+          "updated_at": "2026-02-20 00:44:20"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID048",
+          "free_to_watch": 1,
+          "updated_at": "2026-02-20 00:44:34"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID049",
+          "free_to_watch": 1,
+          "updated_at": "2026-02-20 00:44:56"
+        }
+      ],
+      "count": 6
+    },
+    "admin_posters": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "scraped_posters": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "source",
+        "updated_at"
+      ],
+      "rows": [
+        {
+          "year": 2026,
+          "film_id": "FilmID037",
+          "url": "https://m.media-amazon.com/images/M/MV5BMTkxYmE4ODQtYzA4Zi00MmEzLWI4MmUtOGViN2VkZjczY2NlXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:16"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID041",
+          "url": "https://m.media-amazon.com/images/M/MV5BNjg5ZTJjOGEtMThkMy00MTY0LTk2YjctMWY5ZmU5YTZjZjI0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:19"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID022",
+          "url": "https://m.media-amazon.com/images/M/MV5BM2IzNjdiNzUtNTJjMy00Mjk5LTg3MzItNzA2ZjYzOWE2MGIyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:25"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID042",
+          "url": "https://m.media-amazon.com/images/M/MV5BZTc2YmQzZmMtYjQxYS00ZTYzLThhMDEtNzhlMjVhMTNiYmQ1XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:27"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID011",
+          "url": "https://m.media-amazon.com/images/M/MV5BZDYxY2I1OGMtN2Y4MS00ZmU1LTgyNDAtODA0MzAyYjI0N2Y2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:30"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID012",
+          "url": "https://m.media-amazon.com/images/M/MV5BODQ0NjNlN2MtNGRmZi00OGYzLWFjNGYtMjkyMTlmMWFkNTQ2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:35"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID007",
+          "url": "https://m.media-amazon.com/images/M/MV5BNzIzNWQxMjEtZmQ3MS00OTk2LWFlZjktZDUyYWRkM2M3NWVlXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:39"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID036",
+          "url": "https://m.media-amazon.com/images/M/MV5BYTQ2NDM4MzYtYjM5ZS00YTcyLWI2ZjktN2U4YjdmMzAxZDEzXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:42"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID046",
+          "url": "https://m.media-amazon.com/images/M/MV5BY2UzZGI1NTYtNzIyOC00ZTliLWJhNDItMWQxOTQwNWU0ODc3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:45"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID043",
+          "url": "https://m.media-amazon.com/images/M/MV5BOGMwMDJlMzAtNThhMS00MTYxLWE2MGItOTE2OGNmM2UxOWFhXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:49"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID027",
+          "url": "https://m.media-amazon.com/images/M/MV5BZTEwNjRiMzUtMmU1OC00OWE5LTkwYjItMGE1NTQwMTFiM2NmXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:55"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID026",
+          "url": "https://m.media-amazon.com/images/M/MV5BYmZkZmU2OTctM2U4Ny00NmMyLWFmZTktMjk4MDJkY2QyZDdiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:52:59"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID019",
+          "url": "https://m.media-amazon.com/images/M/MV5BMTQ3YzZhMjctYTM3MC00YjZhLWE1ZjQtOGRlNjM2OTRmZGE3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:04"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID023",
+          "url": "https://m.media-amazon.com/images/M/MV5BOWE5ZDMyMWEtOTZjMi00YzFhLWE4OTEtNDc3MDMzZjFmMmIzXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:07"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID008",
+          "url": "https://m.media-amazon.com/images/M/MV5BNGI0MDI4NjEtOWU3ZS00ODQyLWFhYTgtNGYxM2ZkM2Q2YjE3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:10"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID047",
+          "url": "https://m.media-amazon.com/images/M/MV5BYzcxOGVhMzEtYWJkMi00MGY4LWFmYmMtZThhN2E1NzQ0Y2M4XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:13"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID003",
+          "url": "https://m.media-amazon.com/images/M/MV5BYzYzNDYxMTQtMTU4OS00MTdlLThhMTQtZjI4NGJmMTZmNmRiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:16"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID006",
+          "url": "https://m.media-amazon.com/images/M/MV5BMDQ5ZmY0OWYtOTYzZi00Mzg5LWE3N2EtMjYwZTAzZmJhYjkyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:21"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID015",
+          "url": "https://m.media-amazon.com/images/M/MV5BMGRlMjIzMDctNzNkMS00MzEwLTlhZWEtM2FjYmE1ZmFjMzZlXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:25"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID018",
+          "url": "https://m.media-amazon.com/images/M/MV5BMWJkZmZlNjUtM2Q1OC00MmNjLWFkOWEtNjRhN2FkM2ZlMjI3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:29"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID038",
+          "url": "https://m.media-amazon.com/images/M/MV5BMDE1MTc4Y2ItZDRkMi00YzllLTlmNTUtZjA3MzQ5ODcxY2UyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:32"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID034",
+          "url": "https://m.media-amazon.com/images/M/MV5BNjg2NTcwYWQtYzk4NS00MTJhLWEzZjItMzIxNjk3YzlkYzU0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:35"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID013",
+          "url": "https://m.media-amazon.com/images/M/MV5BNTBiYWJlMjQtOTIyMy00NTY4LWFhOWItOWZhNzc3NGMyMjc2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:40"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID031",
+          "url": "https://m.media-amazon.com/images/M/MV5BMzIzNzZlMGItMzg3OC00MmI0LWE4NGEtNzQwZDczOGI0NGIwXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:43"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID024",
+          "url": "https://m.media-amazon.com/images/M/MV5BNjMxMDU3ZGEtMzMyMi00OGZiLWFlZTAtMTAyMmYwOWYxZmIxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:46"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID004",
+          "url": "https://m.media-amazon.com/images/M/MV5BZTRhYjI1MTItMWYwMi00MjY5LWI1OTktMzQwNzA3MWJlN2QyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:48"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID028",
+          "url": "https://m.media-amazon.com/images/M/MV5BYWVjNGQ5NjYtZDk2My00NzgxLWE1NDMtOGEzYTQzMjAxODIxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:51"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID002",
+          "url": "https://m.media-amazon.com/images/M/MV5BMzBkZmQ0NjMtNTZlMy00ZjdlLTg5ODUtYWFlNGM0YzE3MTg0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:54"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID045",
+          "url": "https://m.media-amazon.com/images/M/MV5BZmMwYTA4ODYtZjM0ZS00Y2Q2LWIyNzctOTQxZGFmZjk3ZDRiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:53:58"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID049",
+          "url": "https://m.media-amazon.com/images/M/MV5BZjkyYjUxYWEtZDU0NC00NmRkLThjOTYtZDgyZTlhMDI1OTQ4XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:02"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID005",
+          "url": "https://m.media-amazon.com/images/M/MV5BNTMwMTk0Y2QtY2VhNy00OGYwLThkMjMtZjkwMGI3MTJiMjAyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:05"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID001",
+          "url": "https://m.media-amazon.com/images/M/MV5BNjIwZWY4ZDEtMmIxZS00NDA4LTg4ZGMtMzUwZTYyNzgxMzk5XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:09"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID014",
+          "url": "https://m.media-amazon.com/images/M/MV5BNzA1OTkyN2MtMGZjYy00NTcxLTg4Y2ItZjc4NjM2NmQzMzdjXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:14"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID016",
+          "url": "https://m.media-amazon.com/images/M/MV5BYmQ2YjhjNjgtNGQxNC00NmI0LWEzMjktNWEzMWY2OTUwZjFiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:17"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID029",
+          "url": "https://m.media-amazon.com/images/M/MV5BZDYwZjE5Y2UtN2RiYS00MGE0LThlNzEtMTAxMzM1YmU4YzU2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:20"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID044",
+          "url": "https://m.media-amazon.com/images/M/MV5BNGM4ZGEzMTQtN2YzMC00NjAzLWJmNjUtY2Y5OTkyM2ZmNDBjXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:24"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID048",
+          "url": "https://m.media-amazon.com/images/M/MV5BOGZhMWIwYmEtN2MyMS00OGFjLWIxYWMtNDMyMWNkZTAyMWI3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:27"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID035",
+          "url": "https://m.media-amazon.com/images/M/MV5BZTIzNmQzYzUtNTdlNi00NmY5LThmNTYtMGFmZjUxMTgzOGNmXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:31"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID030",
+          "url": "https://m.media-amazon.com/images/M/MV5BZmYxZjA5YmItMjJkYi00NzllLWJjMzgtZjFjZjBlZGQwMmRkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:35"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID009",
+          "url": "https://m.media-amazon.com/images/M/MV5BNDlkMzNhYzgtNTk1Yi00M2I1LTlkOTMtY2RmZGU3YzVmMzE2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:39"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID039",
+          "url": "https://m.media-amazon.com/images/M/MV5BMTI2NmQwMmMtOGFlMS00YjAyLTk0ZDQtM2IyZmRjOWUzNTIzXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:42"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID032",
+          "url": "https://m.media-amazon.com/images/M/MV5BOWYxZTM1ZGMtMjg5MC00NzcyLTk0ZTEtZWI0ZThkNDJiYjZmXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:45"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID050",
+          "url": "https://m.media-amazon.com/images/M/MV5BMzM3MjZlYjUtMTU3Ni00MWVjLWEzNjItODNiNDQ2NzFjYTdkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:48"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID033",
+          "url": "https://m.media-amazon.com/images/M/MV5BYzk2MjdkZDMtNmU0ZC00ZTEyLTk0ZTAtZDM1MmFhNDdhMjFiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:51"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID021",
+          "url": "https://m.media-amazon.com/images/M/MV5BZWVlM2RjYTctODU4Mi00NTQzLWEzMDktZGVmYTQ2NTEwOWFiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:54"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID010",
+          "url": "https://m.media-amazon.com/images/M/MV5BZDkzNzkyNTktYzNhMi00YjhiLWI5YmUtZjliMTY0ZDc5NmMyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:54:57"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID040",
+          "url": "https://m.media-amazon.com/images/M/MV5BMmJjYzIzNjQtMDhlYy00YjEzLTg0NzgtZjFkZDcyZDA4ODg1XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:55:00"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID020",
+          "url": "https://m.media-amazon.com/images/M/MV5BYTQxMjZlNmItYmNkZS00ZmI3LTljZjYtYjQxODEyYzcwZDM1XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:55:03"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID017",
+          "url": "https://m.media-amazon.com/images/M/MV5BNTBhNWJjZWItYzY3NS00M2NkLThmOWYtYTlmNzBmN2UxZWFjXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:55:06"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID025",
+          "url": "https://m.media-amazon.com/images/M/MV5BYjg1Mjc3MjQtMTZjNy00YWVlLWFhMWEtMWI3ZTgxYjJmNmRlXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+          "source": "lookup",
+          "updated_at": "2026-02-20 00:55:11"
+        }
+      ],
+      "count": 50
+    },
+    "admin_banners": {
+      "columns": [
+        "year",
+        "enabled",
+        "text"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_event_modes": {
+      "columns": [
+        "year",
+        "enabled"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_voting_locks": {
+      "columns": [
+        "year",
+        "enabled"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "category_winners": {
+      "columns": [
+        "year",
+        "category_id",
+        "film_id",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    }
+  }
+}

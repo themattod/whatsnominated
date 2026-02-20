@@ -79,6 +79,29 @@ python3 backend/export_admin_state.py --out data/backups/admin-state-manual.json
 python3 backend/import_admin_state.py --infile data/backups/admin-state-manual.json
 ```
 
+## Deploy Seed Assets (No Production Rescrape)
+
+To deploy with your **local curated** watch links and posters, export seed assets before push:
+
+```bash
+python3 backend/export_seed_assets.py
+```
+
+This writes:
+- `seed_data/deploy_seed_assets.json` (watch links, labels, poster refs, winners, banner/mode state)
+- `seed_data/poster_cache/` (copied local poster cache)
+
+After deploying on Render, run:
+
+```bash
+cd /opt/render/project/src
+python3 backend/seed_db.py
+python3 backend/import_seed_assets.py
+python3 backend/create_admin.py --email 'matt@whatsnominated.com' --password 'Marg0tL3onR155y'
+```
+
+This avoids re-scraping on Render and restores your local curated state.
+
 ## Year Import Workflow (Future + Backfill)
 
 Validate first, then import:
@@ -137,6 +160,8 @@ If the value is blank, analytics stays disabled.
 - `backend/validate_year.py`: validates single-year payloads before import
 - `backend/import_year.py`: imports validated year payloads with run tracking
 - `backend/year_data_utils.py`: shared load/validation helpers for year payloads
+- `backend/export_seed_assets.py`: exports deploy seed assets from local DB/cache
+- `backend/import_seed_assets.py`: imports deploy seed assets into deployed DB/cache
 - `data/oscars.db`: SQLite database
 - `web/index.html`, `web/user.js`, `web/styles.css`: user-facing frontend
 - `web/admin.html`, `web/admin.js`: admin frontend
