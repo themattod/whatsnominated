@@ -1,6 +1,7 @@
 const ALL_CATEGORIES = '__ALL__';
 const ADMIN_PREFS_KEY = 'oscars:admin:prefs';
 const EVENT_MODE_SIGNAL_KEY = 'oscars:event-mode-signal';
+const POSTER_CACHE_BUSTER = Date.now();
 const ADMIN_LOGIN_PATH = '/admin-login.html';
 
 const state = {
@@ -154,7 +155,7 @@ const resolveWatchUrl = (film) => {
   return url;
 };
 const posterProxyUrl = (filmId) =>
-  `/api/poster-image?year=${encodeURIComponent(String(state.year))}&filmId=${encodeURIComponent(filmId)}`;
+  `/api/poster-image?year=${encodeURIComponent(String(state.year))}&filmId=${encodeURIComponent(filmId)}&v=${POSTER_CACHE_BUSTER}`;
 const resolvePosterUrl = (film) => posterProxyUrl(film.id);
 
 const sizeSelectToOptions = (selectEl) => {
