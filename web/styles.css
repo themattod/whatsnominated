@@ -681,6 +681,24 @@ select {
   display: inline-block;
 }
 
+.pick-hint {
+  position: absolute;
+  top: 3.55rem;
+  right: 0.8rem;
+  width: 5.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6a5a30;
+}
+
+.pick-hint[hidden] {
+  display: none !important;
+}
+
 .winner-label[hidden] {
   display: none !important;
 }
@@ -859,6 +877,10 @@ button:hover {
   }
 
   .user-page .pick-button {
+    top: 5.1rem;
+  }
+
+  .user-page .pick-hint {
     top: 5.1rem;
   }
 }
@@ -1089,6 +1111,13 @@ button:hover {
     min-width: 4.15rem;
     padding: 0.34rem 0.52rem;
     font-size: 0.9rem;
+  }
+
+  .pick-hint {
+    top: 3.25rem;
+    right: 0.62rem;
+    width: 4.15rem;
+    font-size: 0.58rem;
   }
 
   .winner-label {

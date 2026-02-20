@@ -351,6 +351,7 @@ const renderFilms = () => {
     seenButton.textContent = seen ? 'Seen ✅' : 'Seen?';
 
     const pickButton = card.querySelector('.pick-button');
+    const pickHint = card.querySelector('.pick-hint');
     const winnerLabel = card.querySelector('.winner-label');
     if (state.category !== ALL_CATEGORIES) {
       const category = state.category;
@@ -377,11 +378,13 @@ const renderFilms = () => {
         : `My Pick${pickedSuffix}`;
 
       winnerLabel.hidden = !isWinner;
+      pickHint.hidden = true;
     } else {
       pickButton.hidden = true;
       pickButton.disabled = false;
       pickButton.dataset.pickResult = 'pending';
       winnerLabel.hidden = true;
+      pickHint.hidden = false;
     }
 
     const posterImage = card.querySelector('.poster-image');
