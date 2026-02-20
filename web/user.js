@@ -1,4 +1,31 @@
 const ALL_CATEGORIES = '__ALL__';
+const DEFAULT_CATEGORY = 'Actor in a Leading Role';
+const CATEGORY_VIEW_ORDER = [
+  'Actor in a Leading Role',
+  'Actor in a Supporting Role',
+  'Actress in a Leading Role',
+  'Actress in a Supporting Role',
+  'Animated Feature Film',
+  'Animated Short Film',
+  'Casting',
+  'Cinematography',
+  'Costume Design',
+  'Directing',
+  'Documentary Feature Film',
+  'Documentary Short Film',
+  'Film Editing',
+  'International Feature Film',
+  'Live Action Short Film',
+  'Makeup and Hairstyling',
+  'Music (Original Score)',
+  'Music (Original Song)',
+  'Best Picture',
+  'Production Design',
+  'Sound',
+  'Visual Effects',
+  'Writing (Adapted Screenplay)',
+  'Writing (Original Screenplay)'
+];
 const LIVE_SYNC_INTERVAL_MS = 5000;
 const USER_PREFS_KEY = 'oscars:user:prefs';
 const EVENT_MODE_SIGNAL_KEY = 'oscars:event-mode-signal';
@@ -27,7 +54,7 @@ const state = {
     rankedUserCount: 0,
     tiedUserCount: 1
   },
-  category: ALL_CATEGORIES,
+  category: DEFAULT_CATEGORY,
   sort: 'title',
   banner: {
     enabled: true,
@@ -71,6 +98,9 @@ if (typeof userPrefs.category === 'string') {
 }
 if (userPrefs.sort === 'title' || userPrefs.sort === 'nominations') {
   state.sort = userPrefs.sort;
+}
+if (state.category === ALL_CATEGORIES) {
+  state.category = DEFAULT_CATEGORY;
 }
 
 const localPickKey = (year, userKey) => `oscars:picks:${year}:${userKey}`;
@@ -226,22 +256,34 @@ const buildYearOptions = () => {
 
 const buildCategoryOptions = () => {
   categorySelect.innerHTML = '';
-  const all = document.createElement('option');
-  all.value = ALL_CATEGORIES;
-  all.textContent = 'All films';
-  categorySelect.append(all);
+  const presentByName = new Map(state.categories.map((category) => [category.name, category]));
+  const ordered = [];
+  for (const name of CATEGORY_VIEW_ORDER) {
+    if (presentByName.has(name)) {
+      ordered.push(presentByName.get(name));
+      presentByName.delete(name);
+    }
+  }
+  ordered.push(...presentByName.values());
 
-  for (const category of state.categories) {
+  for (const category of ordered) {
     const option = document.createElement('option');
     option.value = category.name;
     option.textContent = category.name;
     categorySelect.append(option);
   }
 
+  const all = document.createElement('option');
+  all.value = ALL_CATEGORIES;
+  all.textContent = 'All films';
+  categorySelect.append(all);
+
   const hasCategory =
     state.category === ALL_CATEGORIES || state.categories.some((c) => c.name === state.category);
   if (!hasCategory) {
-    state.category = ALL_CATEGORIES;
+    state.category = state.categories.some((c) => c.name === DEFAULT_CATEGORY)
+      ? DEFAULT_CATEGORY
+      : (state.categories[0]?.name || ALL_CATEGORIES);
   }
   categorySelect.value = state.category;
   sizeSelectToOptions(categorySelect);
@@ -492,7 +534,7 @@ const updatePick = async (category, filmId, picked) => {
 const wireEvents = () => {
   yearSelect.addEventListener('change', async (event) => {
     state.year = Number(event.target.value);
-    state.category = ALL_CATEGORIES;
+    state.category = DEFAULT_CATEGORY;
     saveUserPrefs();
     await refresh();
   });

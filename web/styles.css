@@ -884,6 +884,10 @@ button:hover {
   .user-page .pick-hint {
     top: 5.1rem;
   }
+
+  .user-page .winner-label {
+    top: 7.7rem;
+  }
 }
 
 @media (max-width: 640px) {
