@@ -336,14 +336,14 @@ const renderFilms = () => {
 
     const meta = card.querySelector('.film-meta');
     if (state.category === ALL_CATEGORIES) {
-      meta.textContent = `Nominated in ${categoryNames.length} categor${categoryNames.length === 1 ? 'y' : 'ies'}.`;
+      meta.textContent = `${categoryNames.length} Nomination${categoryNames.length === 1 ? '' : 's'}`;
     } else {
       const nominees = nominatedIn
         .filter((n) => n.category === state.category)
         .map((n) => n.nominee)
         .filter(Boolean);
       meta.textContent = nominees.length
-        ? `Nominee(s): ${nominees.join(' • ')}`
+        ? nominees.join(' • ')
         : 'Nominee details unavailable.';
     }
 

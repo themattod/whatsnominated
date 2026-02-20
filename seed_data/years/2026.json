@@ -1,0 +1,1257 @@
+{
+  "schemaVersion": 1,
+  "year": 2026,
+  "label": "2026 Academy Awards Nominees",
+  "categories": [
+    {
+      "name": "Actor in a Leading Role",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Actor in a Supporting Role",
+      "yearStarted": 1937,
+      "yearEnded": null
+    },
+    {
+      "name": "Actress in a Leading Role",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Actress in a Supporting Role",
+      "yearStarted": 1936,
+      "yearEnded": null
+    },
+    {
+      "name": "Animated Feature Film",
+      "yearStarted": 2002,
+      "yearEnded": null
+    },
+    {
+      "name": "Animated Short Film",
+      "yearStarted": 1932,
+      "yearEnded": null
+    },
+    {
+      "name": "Best Picture",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Casting",
+      "yearStarted": 2026,
+      "yearEnded": null
+    },
+    {
+      "name": "Cinematography",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Costume Design",
+      "yearStarted": 1949,
+      "yearEnded": null
+    },
+    {
+      "name": "Directing",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Documentary Feature Film",
+      "yearStarted": 1942,
+      "yearEnded": null
+    },
+    {
+      "name": "Documentary Short Film",
+      "yearStarted": 1942,
+      "yearEnded": null
+    },
+    {
+      "name": "Film Editing",
+      "yearStarted": 1934,
+      "yearEnded": null
+    },
+    {
+      "name": "International Feature Film",
+      "yearStarted": 1957,
+      "yearEnded": null
+    },
+    {
+      "name": "Live Action Short Film",
+      "yearStarted": 1974,
+      "yearEnded": null
+    },
+    {
+      "name": "Makeup and Hairstyling",
+      "yearStarted": 1981,
+      "yearEnded": null
+    },
+    {
+      "name": "Music (Original Score)",
+      "yearStarted": 1935,
+      "yearEnded": null
+    },
+    {
+      "name": "Music (Original Song)",
+      "yearStarted": 1935,
+      "yearEnded": null
+    },
+    {
+      "name": "Production Design",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Sound",
+      "yearStarted": 2021,
+      "yearEnded": null
+    },
+    {
+      "name": "Visual Effects",
+      "yearStarted": 1977,
+      "yearEnded": null
+    },
+    {
+      "name": "Writing (Adapted Screenplay)",
+      "yearStarted": 1929,
+      "yearEnded": null
+    },
+    {
+      "name": "Writing (Original Screenplay)",
+      "yearStarted": 1940,
+      "yearEnded": null
+    }
+  ],
+  "films": [
+    {
+      "id": "FilmID004",
+      "title": "Marty Supreme",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID002",
+      "title": "One Battle After Another",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Apple, Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID012",
+      "title": "Blue Moon",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID001",
+      "title": "Sinners",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Apple, Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID009",
+      "title": "The Secret Agent",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID003",
+      "title": "Frankenstein",
+      "availability": {
+        "free": "",
+        "subscription": "Netflix",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID005",
+      "title": "Sentimental Value",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID006",
+      "title": "Hamnet",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID015",
+      "title": "If I Had Legs I'd Kick You",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Apple, Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID016",
+      "title": "Song Sung Blue",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID007",
+      "title": "Bugonia",
+      "availability": {
+        "free": "",
+        "subscription": "Peacock",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID017",
+      "title": "Weapons",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Apple, Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID022",
+      "title": "Arco",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "",
+        "theaters": "Showtimes"
+      }
+    },
+    {
+      "id": "FilmID023",
+      "title": "Elio",
+      "availability": {
+        "free": "",
+        "subscription": "Disney+",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID013",
+      "title": "KPop Demon Hunters",
+      "availability": {
+        "free": "",
+        "subscription": "Netflix",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID024",
+      "title": "Little Am\u00e9lie",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID025",
+      "title": "Zootopia 2",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID046",
+      "title": "Butterfly",
+      "availability": {
+        "free": "Youtube",
+        "subscription": "",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID047",
+      "title": "Forevergreen",
+      "availability": {
+        "free": "Youtube",
+        "subscription": "",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID048",
+      "title": "The Girl Who Cried Pearls",
+      "availability": {
+        "free": "NFBC - requires VPN",
+        "subscription": "",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID049",
+      "title": "Retirement Plan",
+      "availability": {
+        "free": "Youtube",
+        "subscription": "",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID050",
+      "title": "The Three Sisters",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Not available",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID008",
+      "title": "F1",
+      "availability": {
+        "free": "",
+        "subscription": "Apple",
+        "rent": "Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID010",
+      "title": "Train Dreams",
+      "availability": {
+        "free": "",
+        "subscription": "Netflix",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID011",
+      "title": "Avatar: Fire and Ash",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "",
+        "theaters": "Showtimes"
+      }
+    },
+    {
+      "id": "FilmID029",
+      "title": "The Alabama Solution",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID027",
+      "title": "Come See Me in the Good Light",
+      "availability": {
+        "free": "",
+        "subscription": "Apple",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID026",
+      "title": "Cutting Through the Rocks",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "DocPlay beginning March 2",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID028",
+      "title": "Mr. Nobody Against Putin",
+      "availability": {
+        "free": "",
+        "subscription": "Roku",
+        "rent": "Apple, Fandango",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID030",
+      "title": "The Perfect Neighbor",
+      "availability": {
+        "free": "",
+        "subscription": "Netflix",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID041",
+      "title": "All the Empty Rooms",
+      "availability": {
+        "free": "",
+        "subscription": "Netflix",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID042",
+      "title": "Armed Only With A Camera: The Life and Death of Brent Renaud",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID043",
+      "title": "Children No More: Were And Are Gone",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Not available",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID044",
+      "title": "The Devil is Busy",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID045",
+      "title": "Perfectly a Strangeness",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Patreon",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID018",
+      "title": "It Was Just An Accident",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID014",
+      "title": "Sir\u0101t",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "",
+        "theaters": "Showtimes"
+      }
+    },
+    {
+      "id": "FilmID021",
+      "title": "The Voice of Hind Rajab",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "",
+        "theaters": "Showtimes"
+      }
+    },
+    {
+      "id": "FilmID036",
+      "title": "Butcher's Stain",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Not available",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID037",
+      "title": "A Friend of Dorothy",
+      "availability": {
+        "free": "",
+        "subscription": "Disney+",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID038",
+      "title": "Jane Austen's Period Drama",
+      "availability": {
+        "free": "YouTube",
+        "subscription": "",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID039",
+      "title": "The Singers",
+      "availability": {
+        "free": "",
+        "subscription": "Netflix",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID040",
+      "title": "Two People Exchanging Saliva",
+      "availability": {
+        "free": "Youtube",
+        "subscription": "",
+        "rent": "",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID031",
+      "title": "Kokuho",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "",
+        "theaters": "Showtimes"
+      }
+    },
+    {
+      "id": "FilmID032",
+      "title": "The Smashing Machine",
+      "availability": {
+        "free": "",
+        "subscription": "HBO MAX",
+        "rent": "Apple, Hulu, Amazon, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID033",
+      "title": "The Ugly Stepsister",
+      "availability": {
+        "free": "",
+        "subscription": "Disney+, Hulu",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID019",
+      "title": "Diane Warren: Relentless",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID020",
+      "title": "Viva Verdi!",
+      "availability": {
+        "free": "",
+        "subscription": "",
+        "rent": "Jolt.film",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID034",
+      "title": "Jurassic World Rebirth",
+      "availability": {
+        "free": "",
+        "subscription": "Peacock",
+        "rent": "Apple, Amazon, Google Play, etc",
+        "theaters": ""
+      }
+    },
+    {
+      "id": "FilmID035",
+      "title": "The Lost Bus",
+      "availability": {
+        "free": "",
+        "subscription": "Apple",
+        "rent": "Amazon Prime",
+        "theaters": ""
+      }
+    }
+  ],
+  "nominations": [
+    {
+      "category": "Actor in a Leading Role",
+      "nominee": "Timoth\u00e9e Chalamet",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Actor in a Leading Role",
+      "nominee": "Leonardo DiCaprio",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Actor in a Leading Role",
+      "nominee": "Ethan Hawke",
+      "filmId": "FilmID012"
+    },
+    {
+      "category": "Actor in a Leading Role",
+      "nominee": "Michael B. Jordan",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Actor in a Leading Role",
+      "nominee": "Wagner Moura",
+      "filmId": "FilmID009"
+    },
+    {
+      "category": "Actor in a Supporting Role",
+      "nominee": "Benicio Del Toro",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Actor in a Supporting Role",
+      "nominee": "Jacob Elordi",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Actor in a Supporting Role",
+      "nominee": "Delroy Lindo",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Actor in a Supporting Role",
+      "nominee": "Sean Penn",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Actor in a Supporting Role",
+      "nominee": "Stellan Skarsg\u00e5rd",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Actress in a Leading Role",
+      "nominee": "Jessie Buckley",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Actress in a Leading Role",
+      "nominee": "Rose Byrne",
+      "filmId": "FilmID015"
+    },
+    {
+      "category": "Actress in a Leading Role",
+      "nominee": "Kate Hudson",
+      "filmId": "FilmID016"
+    },
+    {
+      "category": "Actress in a Leading Role",
+      "nominee": "Renate Reinsve",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Actress in a Leading Role",
+      "nominee": "Emma Stone",
+      "filmId": "FilmID007"
+    },
+    {
+      "category": "Actress in a Supporting Role",
+      "nominee": "Elle Fanning",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Actress in a Supporting Role",
+      "nominee": "Inga Ibsdotter Lilleaas",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Actress in a Supporting Role",
+      "nominee": "Amy Madigan",
+      "filmId": "FilmID017"
+    },
+    {
+      "category": "Actress in a Supporting Role",
+      "nominee": "Wunmi Mosaku",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Actress in a Supporting Role",
+      "nominee": "Teyana Taylor",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Animated Feature Film",
+      "nominee": "",
+      "filmId": "FilmID022"
+    },
+    {
+      "category": "Animated Feature Film",
+      "nominee": "",
+      "filmId": "FilmID023"
+    },
+    {
+      "category": "Animated Feature Film",
+      "nominee": "",
+      "filmId": "FilmID013"
+    },
+    {
+      "category": "Animated Feature Film",
+      "nominee": "",
+      "filmId": "FilmID024"
+    },
+    {
+      "category": "Animated Feature Film",
+      "nominee": "",
+      "filmId": "FilmID025"
+    },
+    {
+      "category": "Animated Short Film",
+      "nominee": "",
+      "filmId": "FilmID046"
+    },
+    {
+      "category": "Animated Short Film",
+      "nominee": "",
+      "filmId": "FilmID047"
+    },
+    {
+      "category": "Animated Short Film",
+      "nominee": "",
+      "filmId": "FilmID048"
+    },
+    {
+      "category": "Animated Short Film",
+      "nominee": "",
+      "filmId": "FilmID049"
+    },
+    {
+      "category": "Animated Short Film",
+      "nominee": "",
+      "filmId": "FilmID050"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID007"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID008"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID009"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Best Picture",
+      "nominee": "",
+      "filmId": "FilmID010"
+    },
+    {
+      "category": "Casting",
+      "nominee": "Nina Gold",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Casting",
+      "nominee": "Jennifer Venditti",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Casting",
+      "nominee": "Cassandra Kulukundis",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Casting",
+      "nominee": "Gabriel Domingues",
+      "filmId": "FilmID009"
+    },
+    {
+      "category": "Casting",
+      "nominee": "Francine Maisler",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Cinematography",
+      "nominee": "Dan Laustsen",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Cinematography",
+      "nominee": "Darius Khondji",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Cinematography",
+      "nominee": "Michael Bauman",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Cinematography",
+      "nominee": "Autumn Durald Arkapaw",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Cinematography",
+      "nominee": "Adolpho Veloso",
+      "filmId": "FilmID010"
+    },
+    {
+      "category": "Costume Design",
+      "nominee": "Deborah L. Scott",
+      "filmId": "FilmID011"
+    },
+    {
+      "category": "Costume Design",
+      "nominee": "Kate Hawley",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Costume Design",
+      "nominee": "Malgosia Turzanska",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Costume Design",
+      "nominee": "Miyako Bellizzi",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Costume Design",
+      "nominee": "Ruth E. Carter",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Directing",
+      "nominee": "Chlo\u00e9 Zhao",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Directing",
+      "nominee": "Josh Safdie",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Directing",
+      "nominee": "Paul Thomas Anderson",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Directing",
+      "nominee": "Joachim Trier",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Directing",
+      "nominee": "Ryan Coogler",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Documentary Feature Film",
+      "nominee": "",
+      "filmId": "FilmID029"
+    },
+    {
+      "category": "Documentary Feature Film",
+      "nominee": "",
+      "filmId": "FilmID027"
+    },
+    {
+      "category": "Documentary Feature Film",
+      "nominee": "",
+      "filmId": "FilmID026"
+    },
+    {
+      "category": "Documentary Feature Film",
+      "nominee": "",
+      "filmId": "FilmID028"
+    },
+    {
+      "category": "Documentary Feature Film",
+      "nominee": "",
+      "filmId": "FilmID030"
+    },
+    {
+      "category": "Documentary Short Film",
+      "nominee": "",
+      "filmId": "FilmID041"
+    },
+    {
+      "category": "Documentary Short Film",
+      "nominee": "",
+      "filmId": "FilmID042"
+    },
+    {
+      "category": "Documentary Short Film",
+      "nominee": "",
+      "filmId": "FilmID043"
+    },
+    {
+      "category": "Documentary Short Film",
+      "nominee": "",
+      "filmId": "FilmID044"
+    },
+    {
+      "category": "Documentary Short Film",
+      "nominee": "",
+      "filmId": "FilmID045"
+    },
+    {
+      "category": "Film Editing",
+      "nominee": "Stephen Mirrione",
+      "filmId": "FilmID008"
+    },
+    {
+      "category": "Film Editing",
+      "nominee": "Ronald Bronstein and Josh Safdie",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Film Editing",
+      "nominee": "Andy Jurgensen",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Film Editing",
+      "nominee": "Olivier Bugge Coutt\u00e9",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Film Editing",
+      "nominee": "Michael P. Shawver",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "International Feature Film",
+      "nominee": "Brazil",
+      "filmId": "FilmID009"
+    },
+    {
+      "category": "International Feature Film",
+      "nominee": "France",
+      "filmId": "FilmID018"
+    },
+    {
+      "category": "International Feature Film",
+      "nominee": "Norway",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "International Feature Film",
+      "nominee": "Spain",
+      "filmId": "FilmID014"
+    },
+    {
+      "category": "International Feature Film",
+      "nominee": "Tunisia",
+      "filmId": "FilmID021"
+    },
+    {
+      "category": "Live Action Short Film",
+      "nominee": "",
+      "filmId": "FilmID036"
+    },
+    {
+      "category": "Live Action Short Film",
+      "nominee": "",
+      "filmId": "FilmID037"
+    },
+    {
+      "category": "Live Action Short Film",
+      "nominee": "",
+      "filmId": "FilmID038"
+    },
+    {
+      "category": "Live Action Short Film",
+      "nominee": "",
+      "filmId": "FilmID039"
+    },
+    {
+      "category": "Live Action Short Film",
+      "nominee": "",
+      "filmId": "FilmID040"
+    },
+    {
+      "category": "Makeup and Hairstyling",
+      "nominee": "Mike Hill, Jordan Samuel and Cliona Furey",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Makeup and Hairstyling",
+      "nominee": "Kyoko Toyokawa, Naomi Hibino and Tadashi Nishimatsu",
+      "filmId": "FilmID031"
+    },
+    {
+      "category": "Makeup and Hairstyling",
+      "nominee": "Ken Diaz, Mike Fontaine and Shunika Terry",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Makeup and Hairstyling",
+      "nominee": "Kazu Hiro, Glen Griffin and Bjoern Rehbein",
+      "filmId": "FilmID032"
+    },
+    {
+      "category": "Makeup and Hairstyling",
+      "nominee": "Thomas Foldberg and Anne Cathrine Sauerberg",
+      "filmId": "FilmID033"
+    },
+    {
+      "category": "Music (Original Score)",
+      "nominee": "Jerskin Fendrix",
+      "filmId": "FilmID007"
+    },
+    {
+      "category": "Music (Original Score)",
+      "nominee": "Alexandre Desplat",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Music (Original Score)",
+      "nominee": "Max Richter",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Music (Original Score)",
+      "nominee": "Jonny Greenwood",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Music (Original Score)",
+      "nominee": "Ludwig Goransson",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Music (Original Song)",
+      "nominee": "Diane Warren",
+      "filmId": "FilmID019"
+    },
+    {
+      "category": "Music (Original Song)",
+      "nominee": "EJAE, Mark Sonnenblick, Joong Gyu Kwak, Yu Han Lee, Hee Dong Nam, Jeong Hoon Seo and Teddy Park",
+      "filmId": "FilmID013"
+    },
+    {
+      "category": "Music (Original Song)",
+      "nominee": "Raphael Saadiq and Ludwig Goransson",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Music (Original Song)",
+      "nominee": "Nicholas Pike",
+      "filmId": "FilmID020"
+    },
+    {
+      "category": "Music (Original Song)",
+      "nominee": "Nick Cave and Bryce Dessner;",
+      "filmId": "FilmID010"
+    },
+    {
+      "category": "Production Design",
+      "nominee": "Production Design: Tamara Deverell; Set Decoration: Shane Vieau",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Production Design",
+      "nominee": "Production Design: Fiona Crombie; Set Decoration: Alice Felton",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Production Design",
+      "nominee": "Production Design: Jack Fisk; Set Decoration: Adam Willis",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Production Design",
+      "nominee": "Production Design: Florencia Martin; Set Decoration: Anthony Carlino",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Production Design",
+      "nominee": "Production Design: Hannah Beachler; Set Decoration: Monique Champagne",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Sound",
+      "nominee": "Gareth John, Al Nelson, Gwendolyn Yates Whittle, Gary A. Rizzo and Juan Peralta",
+      "filmId": "FilmID008"
+    },
+    {
+      "category": "Sound",
+      "nominee": "Greg Chapman, Nathan Robitaille, Nelson Ferreira, Christian Cooke and Brad Zoern",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Sound",
+      "nominee": "Jos\u00e9 Antonio Garc\u00eda, Christopher Scarabosio and Tony Villaflor",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Sound",
+      "nominee": "Chris Welcker, Benjamin A. Burtt, Felipe Pacheco, Brandon Proctor and Steve Boeddeker",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Sound",
+      "nominee": "Amanda Villavieja, Laia Casanovas and Yasmina Praderas",
+      "filmId": "FilmID014"
+    },
+    {
+      "category": "Visual Effects",
+      "nominee": "Joe Letteri, Richard Baneham, Eric Saindon and Daniel Barrett",
+      "filmId": "FilmID011"
+    },
+    {
+      "category": "Visual Effects",
+      "nominee": "Ryan Tudhope, Nicolas Chevallier, Robert Harrington and Keith Dawson",
+      "filmId": "FilmID008"
+    },
+    {
+      "category": "Visual Effects",
+      "nominee": "David Vickery, Stephen Aplin, Charmaine Chan and Neil Corbould",
+      "filmId": "FilmID034"
+    },
+    {
+      "category": "Visual Effects",
+      "nominee": "Charlie Noble, David Zaretti, Russell Bowen and Brandon K. McLaughlin",
+      "filmId": "FilmID035"
+    },
+    {
+      "category": "Visual Effects",
+      "nominee": "Michael Ralla, Espen Nordahl, Guido Wolter and Donnie Dean",
+      "filmId": "FilmID001"
+    },
+    {
+      "category": "Writing (Adapted Screenplay)",
+      "nominee": "Will Tracy",
+      "filmId": "FilmID007"
+    },
+    {
+      "category": "Writing (Adapted Screenplay)",
+      "nominee": "Guillermo del Toro",
+      "filmId": "FilmID003"
+    },
+    {
+      "category": "Writing (Adapted Screenplay)",
+      "nominee": "Chlo\u00e9 Zhao & Maggie O'Farrell",
+      "filmId": "FilmID006"
+    },
+    {
+      "category": "Writing (Adapted Screenplay)",
+      "nominee": "Paul Thomas Anderson",
+      "filmId": "FilmID002"
+    },
+    {
+      "category": "Writing (Adapted Screenplay)",
+      "nominee": "Clint Bentley & Greg Kwedar",
+      "filmId": "FilmID010"
+    },
+    {
+      "category": "Writing (Original Screenplay)",
+      "nominee": "Robert Kaplow",
+      "filmId": "FilmID012"
+    },
+    {
+      "category": "Writing (Original Screenplay)",
+      "nominee": "Jafar Panahi; Script collaborators - Nader Sa\u00efvar, Shadmehr Rastin, Mehdi Mahmoudian",
+      "filmId": "FilmID018"
+    },
+    {
+      "category": "Writing (Original Screenplay)",
+      "nominee": "Ronald Bronstein & Josh Safdie",
+      "filmId": "FilmID004"
+    },
+    {
+      "category": "Writing (Original Screenplay)",
+      "nominee": "Eskil Vogt, Joachim Trier",
+      "filmId": "FilmID005"
+    },
+    {
+      "category": "Writing (Original Screenplay)",
+      "nominee": "Ryan Coogler",
+      "filmId": "FilmID001"
+    }
+  ],
+  "defaultSeenFilmIds": []
+}

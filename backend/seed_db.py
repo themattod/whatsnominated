@@ -3,7 +3,15 @@ from pathlib import Path
 
 from db import connect, init_db
 
-DATA_PATH = Path(__file__).resolve().parent.parent / 'data' / 'nominees.json'
+ROOT = Path(__file__).resolve().parent.parent
+SEED_DATA_PATH = ROOT / 'seed_data' / 'nominees.json'
+LEGACY_DATA_PATH = ROOT / 'data' / 'nominees.json'
+
+
+def _resolve_seed_data_path():
+    if SEED_DATA_PATH.exists():
+        return SEED_DATA_PATH
+    return LEGACY_DATA_PATH
 
 
 def seed_year(cur, year_key, payload):
@@ -113,7 +121,8 @@ def seed_year(cur, year_key, payload):
 
 def main():
     init_db()
-    data = json.loads(DATA_PATH.read_text())
+    data_path = _resolve_seed_data_path()
+    data = json.loads(data_path.read_text())
 
     conn = connect()
     cur = conn.cursor()
@@ -123,7 +132,7 @@ def main():
 
     conn.commit()
     conn.close()
-    print('Seed complete')
+    print(f'Seed complete ({data_path})')
 
 
 if __name__ == '__main__':

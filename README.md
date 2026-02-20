@@ -4,7 +4,7 @@ This app now runs as a small full-stack service:
 
 - Backend: Python stdlib HTTP server + SQLite
 - Frontend: static HTML/CSS/JS served by backend
-- Seed data: `data/nominees.json` (generated from your Excel export)
+- Seed data: `seed_data/nominees.json` (generated from your Excel export)
 
 ## Run
 
@@ -62,14 +62,14 @@ Use this wrapper for seed/import runs so admin data is snapshotted and validated
 
 ```bash
 bash scripts/safe_migrate.sh python3 backend/seed_db.py
-bash scripts/safe_migrate.sh python3 backend/import_year.py data/years/2027.json
+bash scripts/safe_migrate.sh python3 backend/import_year.py seed_data/years/2027.json
 ```
 
 Convenience wrappers (recommended):
 
 ```bash
 bash scripts/seed_safe.sh
-bash scripts/import_year_safe.sh data/years/2027.json
+bash scripts/import_year_safe.sh seed_data/years/2027.json
 ```
 
 Admin table export/import tools:
@@ -84,15 +84,15 @@ python3 backend/import_admin_state.py --infile data/backups/admin-state-manual.j
 Validate first, then import:
 
 ```bash
-python3 backend/validate_year.py data/years/2027.json
-bash scripts/import_year_safe.sh data/years/2027.json
+python3 backend/validate_year.py seed_data/years/2027.json
+bash scripts/import_year_safe.sh seed_data/years/2027.json
 ```
 
 If your JSON is a multi-year bundle:
 
 ```bash
-python3 backend/validate_year.py data/nominees.json --year 2026
-bash scripts/import_year_safe.sh data/nominees.json --year 2026
+python3 backend/validate_year.py seed_data/nominees.json --year 2026
+bash scripts/import_year_safe.sh seed_data/nominees.json --year 2026
 ```
 
 Notes:
