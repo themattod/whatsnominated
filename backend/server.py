@@ -51,6 +51,7 @@ def slugify_title(title):
 
 
 class OscarHandler(SimpleHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
     _login_attempts_by_key = {}
     _login_lockouts = {}
     _reset_attempts_by_key = {}
