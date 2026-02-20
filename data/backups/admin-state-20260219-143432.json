@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "db_path": "/Users/mattod/Documents/Codex/Oscar Tracker/data/oscars.db",
+    "tables": [
+      "admin_users",
+      "admin_sessions",
+      "admin_password_resets",
+      "admin_watch_links",
+      "admin_watch_labels",
+      "admin_posters",
+      "admin_banners",
+      "admin_event_modes",
+      "admin_voting_locks",
+      "admin_audit_logs"
+    ]
+  },
+  "tables": {
+    "admin_users": {
+      "columns": [
+        "id",
+        "email",
+        "password_hash",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "email": "matt@whatsnominated.com",
+          "password_hash": "pbkdf2_sha256$180000$d1728f6a252a2069f0ff3213b53ae5e1$e830f59de4b80d392892eebfd517a91cf8434ecda265b2f2768c8bf920c9cd42",
+          "created_at": "2026-02-19 19:27:48",
+          "updated_at": "2026-02-19 19:27:48"
+        }
+      ],
+      "count": 1
+    },
+    "admin_sessions": {
+      "columns": [
+        "token",
+        "user_id",
+        "expires_at",
+        "created_at",
+        "csrf_token"
+      ],
+      "rows": [
+        {
+          "token": "FAoBQ16ztI0On41Ax-aDy3VR9LnZkuxSAaQlj3rmpQM",
+          "user_id": 1,
+          "expires_at": "2026-03-05 20:06:00",
+          "created_at": "2026-02-19 20:06:00",
+          "csrf_token": ""
+        }
+      ],
+      "count": 1
+    },
+    "admin_password_resets": {
+      "columns": [
+        "token_hash",
+        "user_id",
+        "expires_at",
+        "used_at",
+        "created_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_watch_links": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_watch_labels": {
+      "columns": [
+        "year",
+        "film_id",
+        "free_to_watch",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_posters": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_banners": {
+      "columns": [
+        "year",
+        "enabled",
+        "text"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_event_modes": {
+      "columns": [
+        "year",
+        "enabled"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_voting_locks": {
+      "columns": [
+        "year",
+        "enabled"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_audit_logs": {
+      "columns": [
+        "id",
+        "admin_user_id",
+        "action",
+        "success",
+        "actor_email",
+        "request_ip",
+        "user_agent",
+        "details",
+        "created_at"
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "admin_user_id": 1,
+          "action": "admin_audit_logs_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"limit\":100,\"action\":\"\",\"success\":\"all\"}",
+          "created_at": "2026-02-19 22:23:54"
+        },
+        {
+          "id": 2,
+          "admin_user_id": 1,
+          "action": "admin_audit_logs_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"limit\":100,\"action\":\"\",\"success\":\"all\"}",
+          "created_at": "2026-02-19 22:23:59"
+        },
+        {
+          "id": 3,
+          "admin_user_id": 1,
+          "action": "admin_dashboard_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"year\":2026}",
+          "created_at": "2026-02-19 22:24:05"
+        },
+        {
+          "id": 4,
+          "admin_user_id": 1,
+          "action": "admin_dashboard_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"year\":2026}",
+          "created_at": "2026-02-19 22:30:00"
+        }
+      ],
+      "count": 4
+    }
+  }
+}

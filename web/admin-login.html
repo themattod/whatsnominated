@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | whatsnominated</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
+    <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell" style="max-width: 720px;">
+      <header class="app-header admin-header">
+        <div class="brand-block">
+          <img class="brand-logo" src="/assets/header-logo.png" alt="whatsnominated logo" />
+          <div class="brand-copy">
+            <p class="eyebrow">Admin</p>
+            <h1>WhatsNominated</h1>
+          </div>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Admin authentication">
+        <div class="control-card">
+          <p class="control-title">Admin Sign In</p>
+          <form id="adminLoginForm" class="banner-form" autocomplete="on">
+            <label>
+              Email
+              <input class="auth-input" id="email" type="email" autocomplete="username" required />
+            </label>
+            <label>
+              Password
+              <input class="auth-input" id="password" type="password" autocomplete="current-password" required />
+            </label>
+            <div class="admin-mode-actions">
+              <button type="submit">Sign In</button>
+              <button type="button" id="forgotPasswordButton">Reset Password</button>
+            </div>
+            <p id="loginStatus" class="banner-save-status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/admin-login.js"></script>
+  </body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>whatsnominated admin audit logs</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
+    <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header admin-header">
+        <div class="brand-block">
+          <img class="brand-logo" src="/assets/header-logo.png" alt="whatsnominated logo" />
+          <div class="brand-copy">
+            <p class="eyebrow">Admin</p>
+            <h1>Audit Logs</h1>
+            <p class="subtitle">Security and admin action history.</p>
+          </div>
+        </div>
+        <div class="admin-header-actions">
+          <a class="button-link" href="/admin.html">Admin Home</a>
+          <button type="button" id="adminLogoutButton">Log Out</button>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Admin audit logs">
+        <div class="control-card">
+          <p class="control-title">Audit Logs</p>
+          <div class="control-grid browse-grid">
+            <label>
+              Action
+              <select id="auditActionSelect">
+                <option value="">All actions</option>
+              </select>
+            </label>
+            <label>
+              Success
+              <select id="auditSuccessSelect">
+                <option value="all">All</option>
+                <option value="1">Success</option>
+                <option value="0">Failure</option>
+              </select>
+            </label>
+            <label>
+              Rows
+              <select id="auditLimitSelect">
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="200">200</option>
+                <option value="500">500</option>
+              </select>
+            </label>
+            <label>
+              &nbsp;
+              <button type="button" id="auditRefreshButton">Refresh Logs</button>
+            </label>
+          </div>
+          <p id="auditStatus" class="banner-save-status" aria-live="polite"></p>
+          <div class="audit-table-wrap">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Action</th>
+                  <th>Status</th>
+                  <th>Admin</th>
+                  <th>IP</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/admin-audit.js?v=20260219-2"></script>
+  </body>
+</html>

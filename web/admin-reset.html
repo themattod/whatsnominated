@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Admin Password | whatsnominated</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
+    <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell" style="max-width: 720px;">
+      <header class="app-header admin-header">
+        <div class="brand-block">
+          <img class="brand-logo" src="/assets/header-logo.png" alt="whatsnominated logo" />
+          <div class="brand-copy">
+            <p class="eyebrow">Admin</p>
+            <h1>Reset Password</h1>
+            <p class="subtitle">Create a new admin password.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Admin password reset">
+        <div class="control-card">
+          <p class="control-title">Set New Password</p>
+          <form id="adminResetForm" class="banner-form" autocomplete="on">
+            <label>
+              New Password
+              <input id="newPassword" type="password" autocomplete="new-password" minlength="10" required />
+            </label>
+            <label>
+              Confirm New Password
+              <input id="confirmPassword" type="password" autocomplete="new-password" minlength="10" required />
+            </label>
+            <div class="admin-mode-actions">
+              <button type="submit">Save Password</button>
+              <a href="/admin-login.html">Back to Login</a>
+            </div>
+            <p id="resetStatus" class="banner-save-status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/admin-reset.js"></script>
+  </body>
+</html>

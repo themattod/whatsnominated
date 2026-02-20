@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact | whatsnominated</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
+    <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell contact-shell">
+      <header class="app-header contact-header">
+        <div class="brand-copy">
+          <a class="brand-block brand-home-link" href="/">
+            <img class="brand-logo" src="/assets/header-logo.png" alt="whatsnominated logo" />
+            <h1>WhatsNominated</h1>
+          </a>
+        </div>
+      </header>
+
+      <section class="control-card contact-card">
+        <form id="contactForm" class="contact-form">
+          <h2 class="contact-title">Feedback</h2>
+          <label>
+            Name
+            <input type="text" id="contactName" required />
+          </label>
+          <label>
+            Email
+            <input type="email" id="contactEmail" required />
+          </label>
+          <label>
+            Topic
+            <input type="text" id="contactTopic" placeholder="Bug report, feedback, question..." />
+          </label>
+          <label>
+            Message
+            <textarea id="contactMessage" rows="7" required></textarea>
+          </label>
+          <div class="contact-actions">
+            <button type="submit">Send Message</button>
+            <a class="contact-back-link" href="/">Back to tracker</a>
+          </div>
+          <p id="contactStatus" class="banner-save-status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/contact.js"></script>
+    <script src="/analytics-config.js"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>

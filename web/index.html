@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>whatsnominated</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
+    <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <div class="sticky-head">
+        <section id="announcementBanner" class="announcement-banner" aria-label="Voting deadline">
+          MAKE YOUR PICKS BY SUNDAY, MARCH 15, 2026, 7PM PST - VOTING CLOSES AT THE BEGINNING OF THE OSCARS BROADCAST
+        </section>
+        <header class="app-header">
+          <div class="brand-block">
+            <img class="brand-logo" src="/assets/header-logo.png" alt="whatsnominated logo" />
+            <div class="brand-copy">
+              <h1>WhatsNominated</h1>
+              <p class="subtitle">
+                Your Academy Awards Nominee Tracker
+              </p>
+            </div>
+          </div>
+          <section class="header-metrics" aria-label="Progress metrics">
+            <section class="seen-progress" aria-label="Seen progress">
+              <div class="seen-progress-meta">
+                <span id="seenProgressLabel">0% Seen</span>
+                <span id="seenProgressCount">0 / 0</span>
+              </div>
+              <div class="seen-progress-track">
+                <div id="seenProgressFill" class="seen-progress-fill"></div>
+              </div>
+            </section>
+            <section id="pickProgressWrap" class="seen-progress" aria-label="Pick accuracy progress" hidden>
+              <div class="seen-progress-meta">
+                <span id="pickProgressLabel">0% Pick Accuracy</span>
+                <span id="pickProgressCount">0 / 0</span>
+              </div>
+              <div class="seen-progress-track">
+                <div id="pickProgressFill" class="seen-progress-fill"></div>
+              </div>
+            </section>
+            <section id="compareProgressWrap" class="seen-progress" aria-label="Relative pick performance" hidden>
+              <div class="seen-progress-meta">
+                <span id="compareProgressLabel">Rank #1 of 1 Users</span>
+                <span id="compareProgressCount">Leaderboard</span>
+              </div>
+              <div class="seen-progress-track">
+                <div id="compareProgressFill" class="seen-progress-fill"></div>
+              </div>
+            </section>
+          </section>
+        </header>
+      </div>
+
+      <section class="controls" aria-label="Filters and controls">
+        <div class="control-card">
+          <p class="control-title">Browse</p>
+          <div class="control-grid browse-grid">
+            <label id="yearControl">
+              Year
+              <select id="yearSelect"></select>
+            </label>
+
+            <label>
+              Category View
+              <select id="categorySelect"></select>
+            </label>
+
+            <label id="sortWrap">
+              Sort
+              <select id="sortSelect">
+                <option value="title">Title (A-Z)</option>
+                <option value="nominations">Most Nominations</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" id="stats"></section>
+
+      <section id="filmList" class="film-list" aria-live="polite"></section>
+      <footer class="site-footer">
+        Something not working? Complaints? Praise?
+        <a href="/contact.html">Contact us.</a>
+      </footer>
+    </main>
+
+    <template id="filmCardTemplate">
+      <article class="film-card">
+        <button type="button" class="seen-button"></button>
+        <button type="button" class="pick-button" hidden></button>
+        <span class="winner-label" hidden>Winner 🏆</span>
+
+        <div class="film-main">
+          <div class="poster-wrap">
+            <img class="poster-image" alt="" hidden />
+            <div class="poster-fallback" aria-label="No poster available">X</div>
+          </div>
+          <div class="film-copy">
+            <h2 class="film-title"></h2>
+            <p class="film-meta"></p>
+            <div class="tags"></div>
+            <dl class="availability"></dl>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/user.js"></script>
+    <script src="/analytics-config.js"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>

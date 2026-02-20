@@ -1,0 +1,484 @@
+{
+  "meta": {
+    "db_path": "/Users/mattod/Documents/Codex/Oscar Tracker/data/oscars.db",
+    "tables": [
+      "admin_users",
+      "admin_sessions",
+      "admin_password_resets",
+      "admin_watch_links",
+      "admin_watch_labels",
+      "admin_posters",
+      "admin_banners",
+      "admin_event_modes",
+      "admin_voting_locks",
+      "admin_audit_logs"
+    ]
+  },
+  "tables": {
+    "admin_users": {
+      "columns": [
+        "id",
+        "email",
+        "password_hash",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "email": "matt@whatsnominated.com",
+          "password_hash": "pbkdf2_sha256$180000$d1728f6a252a2069f0ff3213b53ae5e1$e830f59de4b80d392892eebfd517a91cf8434ecda265b2f2768c8bf920c9cd42",
+          "created_at": "2026-02-19 19:27:48",
+          "updated_at": "2026-02-19 19:27:48"
+        }
+      ],
+      "count": 1
+    },
+    "admin_sessions": {
+      "columns": [
+        "token",
+        "user_id",
+        "expires_at",
+        "created_at",
+        "csrf_token"
+      ],
+      "rows": [
+        {
+          "token": "FAoBQ16ztI0On41Ax-aDy3VR9LnZkuxSAaQlj3rmpQM",
+          "user_id": 1,
+          "expires_at": "2026-03-05 20:06:00",
+          "created_at": "2026-02-19 20:06:00",
+          "csrf_token": ""
+        }
+      ],
+      "count": 1
+    },
+    "admin_password_resets": {
+      "columns": [
+        "token_hash",
+        "user_id",
+        "expires_at",
+        "used_at",
+        "created_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_watch_links": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "updated_at"
+      ],
+      "rows": [
+        {
+          "year": 2026,
+          "film_id": "FilmID001",
+          "url": "https://www.justwatch.com/us/movie/sinners",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID002",
+          "url": "https://www.justwatch.com/us/movie/one-battle-after-another",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID003",
+          "url": "https://www.justwatch.com/us/movie/frankenstein",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID004",
+          "url": "https://www.justwatch.com/us/movie/marty-supreme",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID005",
+          "url": "https://www.justwatch.com/us/movie/sentimental-value",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID006",
+          "url": "https://www.justwatch.com/us/movie/hamnet",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID007",
+          "url": "https://www.justwatch.com/us/movie/bugonia",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID008",
+          "url": "https://www.justwatch.com/us/movie/f1",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID009",
+          "url": "https://www.justwatch.com/us/movie/the-secret-agent",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID010",
+          "url": "https://www.justwatch.com/us/movie/train-dreams",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID011",
+          "url": "https://www.justwatch.com/us/movie/avatar-fire-and-ash",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID012",
+          "url": "https://www.justwatch.com/us/movie/blue-moon",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID013",
+          "url": "https://www.justwatch.com/us/movie/kpop-demon-hunters",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID014",
+          "url": "https://www.justwatch.com/us/movie/sir\u0101t",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID015",
+          "url": "https://www.justwatch.com/us/movie/if-i-had-legs-id-kick-you",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID016",
+          "url": "https://www.justwatch.com/us/movie/song-sung-blue",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID017",
+          "url": "https://www.justwatch.com/us/movie/weapons",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID018",
+          "url": "https://www.justwatch.com/us/movie/it-was-just-an-accident",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID019",
+          "url": "https://www.justwatch.com/us/movie/diane-warren-relentless",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID020",
+          "url": "https://www.justwatch.com/us/movie/viva-verdi",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID021",
+          "url": "https://www.justwatch.com/us/movie/the-voice-of-hind-rajab",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID022",
+          "url": "https://www.justwatch.com/us/movie/arco",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID023",
+          "url": "https://www.justwatch.com/us/movie/elio",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID024",
+          "url": "https://www.justwatch.com/us/movie/little-am\u00e9lie",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID025",
+          "url": "https://www.justwatch.com/us/movie/zootopia-2",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID026",
+          "url": "https://www.justwatch.com/us/movie/cutting-through-the-rocks",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID027",
+          "url": "https://www.justwatch.com/us/movie/come-see-me-in-the-good-light",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID028",
+          "url": "https://www.justwatch.com/us/movie/mr-nobody-against-putin",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID029",
+          "url": "https://www.justwatch.com/us/movie/the-alabama-solution",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID030",
+          "url": "https://www.justwatch.com/us/movie/the-perfect-neighbor",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID031",
+          "url": "https://www.justwatch.com/us/movie/kokuho",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID032",
+          "url": "https://www.justwatch.com/us/movie/the-smashing-machine",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID033",
+          "url": "https://www.justwatch.com/us/movie/the-ugly-stepsister",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID034",
+          "url": "https://www.justwatch.com/us/movie/jurassic-world-rebirth",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID035",
+          "url": "https://www.justwatch.com/us/movie/the-lost-bus",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID036",
+          "url": "https://www.justwatch.com/us/movie/butchers-stain",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID037",
+          "url": "https://www.justwatch.com/us/movie/a-friend-of-dorothy",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID038",
+          "url": "https://www.justwatch.com/us/movie/jane-austens-period-drama",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID039",
+          "url": "https://www.justwatch.com/us/movie/the-singers",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID040",
+          "url": "https://www.justwatch.com/us/movie/two-people-exchanging-saliva",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID041",
+          "url": "https://www.justwatch.com/us/movie/all-the-empty-rooms",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID042",
+          "url": "https://www.justwatch.com/us/movie/armed-only-with-a-camera-the-life-and-death-of-brent-renaud",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID043",
+          "url": "https://www.justwatch.com/us/movie/children-no-more-were-and-are-gone",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID044",
+          "url": "https://www.justwatch.com/us/movie/the-devil-is-busy",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID045",
+          "url": "https://www.justwatch.com/us/movie/perfectly-a-strangeness",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID046",
+          "url": "https://www.justwatch.com/us/movie/butterfly",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID047",
+          "url": "https://www.justwatch.com/us/movie/forevergreen",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID048",
+          "url": "https://www.justwatch.com/us/movie/the-girl-who-cried-pearls",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID049",
+          "url": "https://www.justwatch.com/us/movie/retirement-plan",
+          "updated_at": "2026-02-19 22:26:08"
+        },
+        {
+          "year": 2026,
+          "film_id": "FilmID050",
+          "url": "https://www.justwatch.com/us/movie/the-three-sisters",
+          "updated_at": "2026-02-19 22:26:08"
+        }
+      ],
+      "count": 50
+    },
+    "admin_watch_labels": {
+      "columns": [
+        "year",
+        "film_id",
+        "free_to_watch",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_posters": {
+      "columns": [
+        "year",
+        "film_id",
+        "url",
+        "updated_at"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_banners": {
+      "columns": [
+        "year",
+        "enabled",
+        "text"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_event_modes": {
+      "columns": [
+        "year",
+        "enabled"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_voting_locks": {
+      "columns": [
+        "year",
+        "enabled"
+      ],
+      "rows": [],
+      "count": 0
+    },
+    "admin_audit_logs": {
+      "columns": [
+        "id",
+        "admin_user_id",
+        "action",
+        "success",
+        "actor_email",
+        "request_ip",
+        "user_agent",
+        "details",
+        "created_at"
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "admin_user_id": 1,
+          "action": "admin_audit_logs_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"limit\":100,\"action\":\"\",\"success\":\"all\"}",
+          "created_at": "2026-02-19 22:23:54"
+        },
+        {
+          "id": 2,
+          "admin_user_id": 1,
+          "action": "admin_audit_logs_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"limit\":100,\"action\":\"\",\"success\":\"all\"}",
+          "created_at": "2026-02-19 22:23:59"
+        },
+        {
+          "id": 3,
+          "admin_user_id": 1,
+          "action": "admin_dashboard_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"year\":2026}",
+          "created_at": "2026-02-19 22:24:05"
+        },
+        {
+          "id": 4,
+          "admin_user_id": 1,
+          "action": "admin_dashboard_view",
+          "success": 1,
+          "actor_email": "matt@whatsnominated.com",
+          "request_ip": "127.0.0.1",
+          "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+          "details": "{\"year\":2026}",
+          "created_at": "2026-02-19 22:30:00"
+        }
+      ],
+      "count": 4
+    }
+  }
+}

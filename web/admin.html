@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>whatsnominated admin</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
+    <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header admin-header">
+        <div class="brand-block">
+          <img class="brand-logo" src="/assets/header-logo.png" alt="whatsnominated logo" />
+          <div class="brand-copy">
+            <p class="eyebrow">Admin</p>
+            <h1>WhatsNominated</h1>
+            <p class="subtitle">Manage links and poster overrides for each nominated film.</p>
+          </div>
+        </div>
+        <div class="admin-header-actions">
+          <a class="button-link" href="/admin-audit.html">Audit Logs</a>
+          <button type="button" id="adminLogoutButton">Log Out</button>
+        </div>
+      </header>
+
+      <section class="admin-sticky-controls" aria-label="Voting controls">
+        <div class="control-card banner-sticky-card">
+          <p class="control-title">BANNER CONTROLS</p>
+          <form id="bannerForm" class="banner-form banner-form-inline">
+            <div class="banner-actions">
+              <button type="button" id="bannerEnabledButton" aria-pressed="true">Banner Enabled</button>
+              <button type="submit" id="bannerSaveButton">Save Banner</button>
+            </div>
+            <textarea id="bannerText" rows="2" placeholder="Banner text" aria-label="Banner text"></textarea>
+            <p id="bannerSaveStatus" class="banner-save-status" aria-live="polite"></p>
+          </form>
+        </div>
+        <div class="control-card voting-controls-card">
+          <p class="control-title">VOTING CONTROLS</p>
+          <div class="admin-mode-actions">
+            <button type="button" id="votingLockHeaderButton">Lock Voting</button>
+            <button type="button" id="eventModeHeaderButton">Enable Live Mode</button>
+            <p id="eventModeSaveStatus" class="banner-save-status" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Admin filters and controls">
+        <div class="control-card">
+          <p class="control-title">Dashboard</p>
+          <dl id="adminDashboard" class="admin-dashboard">
+            <div><dt>Unique Users</dt><dd id="dashUniqueUsers">0</dd></div>
+            <div><dt>Users Compared</dt><dd id="dashUsersCompared">0</dd></div>
+            <div><dt>Total Picks</dt><dd id="dashTotalPicks">0</dd></div>
+            <div><dt>Winner Categories</dt><dd id="dashWinnerCategories">0</dd></div>
+          </dl>
+        </div>
+        <div class="control-card">
+          <p class="control-title">Browse</p>
+          <div class="control-grid browse-grid">
+            <label id="yearControl">
+              Year
+              <select id="yearSelect"></select>
+            </label>
+
+            <label>
+              Category View
+              <select id="categorySelect"></select>
+            </label>
+
+            <label id="sortWrap">
+              Sort
+              <select id="sortSelect">
+                <option value="title">Title (A-Z)</option>
+                <option value="nominations">Most Nominations</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" id="stats"></section>
+      <section id="filmList" class="film-list" aria-live="polite"></section>
+    </main>
+
+    <template id="filmCardTemplate">
+      <article class="film-card">
+        <button type="button" class="winner-button" hidden></button>
+
+        <div class="film-main">
+          <div class="poster-wrap">
+            <img class="poster-image" alt="" hidden />
+            <div class="poster-fallback" aria-label="No poster available">X</div>
+          </div>
+          <div class="film-copy">
+            <h2 class="film-title"></h2>
+            <p class="film-meta"></p>
+            <div class="tags"></div>
+            <dl class="availability"></dl>
+          </div>
+        </div>
+
+        <form class="admin-form">
+          <h3>Admin Overrides</h3>
+          <label>
+            <span>Where to Watch URL</span>
+            <div class="watch-label-toggle">
+              <input type="checkbox" name="freeToWatch" />
+              <span>Free to Watch</span>
+            </div>
+            <input type="url" name="whereToWatchUrl" />
+          </label>
+          <label>Poster URL <input type="url" name="posterUrl" /></label>
+          <div class="admin-actions">
+            <button type="submit">Save</button>
+            <button type="button" class="clear-override-button">Clear watch override</button>
+            <button type="button" class="clear-poster-button">Clear poster override</button>
+          </div>
+        </form>
+      </article>
+    </template>
+
+    <script type="module" src="/admin.js"></script>
+    <script src="/analytics-config.js"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>
