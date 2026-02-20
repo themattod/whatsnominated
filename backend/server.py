@@ -1242,8 +1242,33 @@ class OscarHandler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.BAD_REQUEST, 'filmId is required')
             return
 
+        conn = connect()
+        row = conn.execute(
+            '''
+            SELECT ap.url AS admin_url, sp.url AS scraped_url
+            FROM film_years fy
+            LEFT JOIN admin_posters ap ON ap.year = fy.year AND ap.film_id = fy.film_id
+            LEFT JOIN scraped_posters sp ON sp.year = fy.year AND sp.film_id = fy.film_id
+            WHERE fy.year = ? AND fy.film_id = ?
+            LIMIT 1
+            ''',
+            (year, film_id),
+        ).fetchone()
+        conn.close()
+
+        # Admin override must win immediately so stale cache can't mask overrides.
+        admin_url = (row['admin_url'] if row else '') or ''
+        admin_url = admin_url.strip()
+        if admin_url and urlparse(admin_url).scheme in {'http', 'https'}:
+            return self._redirect(admin_url, status=HTTPStatus.TEMPORARY_REDIRECT)
+
         cache_path = self._poster_cache_path(year, film_id)
         if not cache_path.exists():
+            fallback_url = ''
+            if row:
+                fallback_url = (row['scraped_url'] or '').strip()
+            if fallback_url and urlparse(fallback_url).scheme in {'http', 'https'}:
+                return self._redirect(fallback_url, status=HTTPStatus.TEMPORARY_REDIRECT)
             self.send_error(HTTPStatus.NOT_FOUND)
             return
 
