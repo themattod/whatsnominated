@@ -279,7 +279,7 @@
         },
         {
           "id": "FilmID024",
-          "title": "Little Am\u00e9lie",
+          "title": "Little Amélie",
           "availability": {
             "free": "",
             "subscription": "",
@@ -489,7 +489,7 @@
         },
         {
           "id": "FilmID014",
-          "title": "Sir\u0101t",
+          "title": "Sirāt",
           "availability": {
             "free": "",
             "subscription": "",
@@ -631,7 +631,7 @@
       "nominations": [
         {
           "category": "Actor in a Leading Role",
-          "nominee": "Timoth\u00e9e Chalamet",
+          "nominee": "Timothée Chalamet",
           "filmId": "FilmID004"
         },
         {
@@ -676,7 +676,7 @@
         },
         {
           "category": "Actor in a Supporting Role",
-          "nominee": "Stellan Skarsg\u00e5rd",
+          "nominee": "Stellan Skarsgård",
           "filmId": "FilmID005"
         },
         {
@@ -731,102 +731,102 @@
         },
         {
           "category": "Animated Feature Film",
-          "nominee": "",
+          "nominee": "Ugo Bienvenu, Félix de Givry, Sophie Mas and Natalie Portman",
           "filmId": "FilmID022"
         },
         {
           "category": "Animated Feature Film",
-          "nominee": "",
+          "nominee": "Madeline Sharafian, Domee Shi, Adrian Molina and Mary Alice Drumm",
           "filmId": "FilmID023"
         },
         {
           "category": "Animated Feature Film",
-          "nominee": "",
+          "nominee": "Maggie Kang, Chris Appelhans and Michelle L.M. Wong",
           "filmId": "FilmID013"
         },
         {
           "category": "Animated Feature Film",
-          "nominee": "",
+          "nominee": "Maïlys Vallade, Liane-Cho Han, Nidia Santiago and Henri Magalon",
           "filmId": "FilmID024"
         },
         {
           "category": "Animated Feature Film",
-          "nominee": "",
+          "nominee": "Jared Bush, Byron Howard and Yvett Merino",
           "filmId": "FilmID025"
         },
         {
           "category": "Animated Short Film",
-          "nominee": "",
+          "nominee": "Florence Miailhe and Ron Dyens",
           "filmId": "FilmID046"
         },
         {
           "category": "Animated Short Film",
-          "nominee": "",
+          "nominee": "Nathan Engelhardt and Jeremy Spears",
           "filmId": "FilmID047"
         },
         {
           "category": "Animated Short Film",
-          "nominee": "",
+          "nominee": "Chris Lavis and Maciek Szczerbowski",
           "filmId": "FilmID048"
         },
         {
           "category": "Animated Short Film",
-          "nominee": "",
+          "nominee": "John Kelly and Andrew Freedman",
           "filmId": "FilmID049"
         },
         {
           "category": "Animated Short Film",
-          "nominee": "",
+          "nominee": "Konstantin Bronzit",
           "filmId": "FilmID050"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Ed Guiney & Andrew Lowe, Yorgos Lanthimos, Emma Stone and Lars Knudsen, Producers",
           "filmId": "FilmID007"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Chad Oman, Brad Pitt, Dede Gardner, Jeremy Kleiner, Joseph Kosinski and Jerry Bruckheimer, Producers",
           "filmId": "FilmID008"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Guillermo del Toro, J. Miles Dale and Scott Stuber, Producers",
           "filmId": "FilmID003"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Liza Marshall, Pippa Harris, Nicolas Gonda, Steven Spielberg and Sam Mendes, Producers",
           "filmId": "FilmID006"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Eli Bush, Ronald Bronstein, Josh Safdie, Anthony Katagas and Timothée Chalamet, Producers",
           "filmId": "FilmID004"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Adam Somner, Sara Murphy and Paul Thomas Anderson, Producers",
           "filmId": "FilmID002"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Emilie Lesclaux, Producer",
           "filmId": "FilmID009"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Maria Ekerhovd and Andrea Berentsen Ottmar, Producers",
           "filmId": "FilmID005"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Zinzi Coogler, Sev Ohanian and Ryan Coogler, Producers",
           "filmId": "FilmID001"
         },
         {
           "category": "Best Picture",
-          "nominee": "",
+          "nominee": "Marissa McMahon, Teddy Schwarzman, Will Janowitz, Ashley Schlaifer and Michael Heimler, Producers",
           "filmId": "FilmID010"
         },
         {
@@ -906,7 +906,7 @@
         },
         {
           "category": "Directing",
-          "nominee": "Chlo\u00e9 Zhao",
+          "nominee": "Chloé Zhao",
           "filmId": "FilmID006"
         },
         {
@@ -931,52 +931,52 @@
         },
         {
           "category": "Documentary Feature Film",
-          "nominee": "",
+          "nominee": "Andrew Jarecki and Charlotte Kaufman",
           "filmId": "FilmID029"
         },
         {
           "category": "Documentary Feature Film",
-          "nominee": "",
+          "nominee": "Ryan White, Jessica Hargrave, Tig Notaro and Stef Willen",
           "filmId": "FilmID027"
         },
         {
           "category": "Documentary Feature Film",
-          "nominee": "",
+          "nominee": "Sara Khaki and Mohammadreza Eyni",
           "filmId": "FilmID026"
         },
         {
           "category": "Documentary Feature Film",
-          "nominee": "",
+          "nominee": "David Borenstein, Pavel Talankin, Helle Faber and Alžběta Karásková",
           "filmId": "FilmID028"
         },
         {
           "category": "Documentary Feature Film",
-          "nominee": "",
+          "nominee": "Geeta Gandbhir, Alisa Payne, Nikon Kwantu and Sam Bisbee",
           "filmId": "FilmID030"
         },
         {
           "category": "Documentary Short Film",
-          "nominee": "",
+          "nominee": "Joshua Seftel and Conall Jones",
           "filmId": "FilmID041"
         },
         {
           "category": "Documentary Short Film",
-          "nominee": "",
+          "nominee": "Craig Renaud and Juan Arredondo",
           "filmId": "FilmID042"
         },
         {
           "category": "Documentary Short Film",
-          "nominee": "",
+          "nominee": "Hilla Medalia and Sheila Nevins",
           "filmId": "FilmID043"
         },
         {
           "category": "Documentary Short Film",
-          "nominee": "",
+          "nominee": "Christalyn Hampton and Geeta Gandbhir",
           "filmId": "FilmID044"
         },
         {
           "category": "Documentary Short Film",
-          "nominee": "",
+          "nominee": "Alison McAlpine",
           "filmId": "FilmID045"
         },
         {
@@ -996,7 +996,7 @@
         },
         {
           "category": "Film Editing",
-          "nominee": "Olivier Bugge Coutt\u00e9",
+          "nominee": "Olivier Bugge Coutté",
           "filmId": "FilmID005"
         },
         {
@@ -1031,27 +1031,27 @@
         },
         {
           "category": "Live Action Short Film",
-          "nominee": "",
+          "nominee": "Meyer Levinson-Blount and Oron Caspi",
           "filmId": "FilmID036"
         },
         {
           "category": "Live Action Short Film",
-          "nominee": "",
+          "nominee": "Lee Knight and James Dean",
           "filmId": "FilmID037"
         },
         {
           "category": "Live Action Short Film",
-          "nominee": "",
+          "nominee": "Julia Aks and Steve Pinder",
           "filmId": "FilmID038"
         },
         {
           "category": "Live Action Short Film",
-          "nominee": "",
+          "nominee": "Sam A. Davis and Jack Piatt",
           "filmId": "FilmID039"
         },
         {
           "category": "Live Action Short Film",
-          "nominee": "",
+          "nominee": "Alexandre Singh and Natalie Musteata",
           "filmId": "FilmID040"
         },
         {
@@ -1166,7 +1166,7 @@
         },
         {
           "category": "Sound",
-          "nominee": "Jos\u00e9 Antonio Garc\u00eda, Christopher Scarabosio and Tony Villaflor",
+          "nominee": "José Antonio García, Christopher Scarabosio and Tony Villaflor",
           "filmId": "FilmID002"
         },
         {
@@ -1216,7 +1216,7 @@
         },
         {
           "category": "Writing (Adapted Screenplay)",
-          "nominee": "Chlo\u00e9 Zhao & Maggie O'Farrell",
+          "nominee": "Chloé Zhao & Maggie O'Farrell",
           "filmId": "FilmID006"
         },
         {
@@ -1236,7 +1236,7 @@
         },
         {
           "category": "Writing (Original Screenplay)",
-          "nominee": "Jafar Panahi; Script collaborators - Nader Sa\u00efvar, Shadmehr Rastin, Mehdi Mahmoudian",
+          "nominee": "Jafar Panahi; Script collaborators - Nader Saïvar, Shadmehr Rastin, Mehdi Mahmoudian",
           "filmId": "FilmID018"
         },
         {
