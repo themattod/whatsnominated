@@ -271,9 +271,6 @@ const renderProgress = () => {
   seenProgressFill.style.width = `${percent}%`;
 
   const winnerEntries = Object.entries(state.winnersByCategory || {});
-  if (appHeader) {
-    appHeader.classList.toggle('compact-metrics', winnerEntries.length === 0);
-  }
   if (winnerEntries.length === 0) {
     pickProgressWrap.hidden = true;
     compareProgressWrap.hidden = true;

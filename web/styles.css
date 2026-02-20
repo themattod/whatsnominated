@@ -59,8 +59,8 @@ body {
 }
 
 .app-header.compact-metrics {
-  padding-right: calc(min(230px, 34vw) + 1.45rem);
-  min-height: 7.25rem;
+  padding-right: calc(min(280px, 42vw) + 1.6rem);
+  min-height: 10rem;
 }
 
 .admin-header {
@@ -166,6 +166,7 @@ body {
   color: var(--muted);
   font-size: 0.96rem;
   letter-spacing: 0.012em;
+  white-space: nowrap;
 }
 
 .header-metrics {
@@ -183,9 +184,9 @@ body {
 }
 
 .app-header.compact-metrics .header-metrics {
-  width: min(230px, 34vw);
-  top: auto;
-  bottom: 1rem;
+  width: min(300px, 43vw);
+  top: 0.85rem;
+  bottom: auto;
 }
 
 .seen-progress {
@@ -949,7 +950,10 @@ button:hover {
     grid-column: 2;
     grid-row: 2;
     padding-right: 4.9rem;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.2;
   }
 
   .tags {
@@ -1130,14 +1134,32 @@ button:hover {
     margin-top: 0;
   }
 
-  .header-metrics {
+  .user-page .sticky-head {
     position: static;
+  }
+
+  .user-page .header-metrics {
+    position: sticky;
+    top: 0.58rem;
+    left: auto;
+    right: auto;
     width: 100%;
     margin-top: 0.65rem;
+    z-index: 42;
+    box-shadow: 0 7px 16px rgba(20, 16, 6, 0.12);
   }
 
   .app-header {
     min-height: 0;
     padding-right: 1rem;
+  }
+
+  .user-page .app-header h1 {
+    margin-top: 0.2rem;
+  }
+
+  .user-page .subtitle {
+    font-size: 0.84rem;
+    letter-spacing: 0.002em;
   }
 }
