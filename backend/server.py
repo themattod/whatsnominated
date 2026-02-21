@@ -24,7 +24,7 @@ DEFAULT_BANNER_TEXT = (
     'MAKE YOUR PICKS BY SUNDAY, MARCH 15, 2026, 7PM PST - '
     'VOTING CLOSES AT THE BEGINNING OF THE OSCARS BROADCAST'
 )
-SUPPORT_EMAIL = 'support@whatsnominated.com'
+SUPPORT_EMAIL = os.getenv('OSCAR_SUPPORT_EMAIL', 'matt@whatsnominated.com')
 CONTACT_FROM_EMAIL = os.getenv('OSCAR_CONTACT_FROM', 'no-reply@whatsnominated.com')
 SMTP_HOST = os.getenv('OSCAR_SMTP_HOST', '127.0.0.1')
 SMTP_PORT = int(os.getenv('OSCAR_SMTP_PORT', '25'))

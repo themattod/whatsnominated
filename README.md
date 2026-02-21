@@ -31,6 +31,7 @@ Admin login: [http://127.0.0.1:8000/admin-login.html](http://127.0.0.1:8000/admi
   - `OSCAR_SMTP_HOST`, `OSCAR_SMTP_PORT`
   - `OSCAR_SMTP_USER`, `OSCAR_SMTP_PASS`
   - `OSCAR_SMTP_STARTTLS=1` (recommended for hosted SMTP)
+  - `OSCAR_SUPPORT_EMAIL` (contact form recipient; default `matt@whatsnominated.com`)
 - Audit logs auto-retain only recent entries (default `90` days). Override with `OSCAR_AUDIT_RETENTION_DAYS`.
 
 ## Key behavior
