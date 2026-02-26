@@ -80,6 +80,36 @@ python3 backend/export_admin_state.py --out data/backups/admin-state-manual.json
 python3 backend/import_admin_state.py --infile data/backups/admin-state-manual.json
 ```
 
+Schema smoke test (verifies required v2.2 tables/indexes on current DB and a fresh DB):
+
+```bash
+bash scripts/schema_smoke_test.sh
+```
+
+Pools repository smoke test:
+
+```bash
+python3 backend/pools_repo_smoke_test.py
+```
+
+Pool scoring/submission smoke test:
+
+```bash
+python3 backend/pool_scoring_smoke_test.py
+```
+
+Odds import (manual text/CSV/JSON):
+
+```bash
+python3 backend/odds_sync.py --year 2026 --infile /path/to/odds_rows.txt
+```
+
+Optional continuous loop (for local testing):
+
+```bash
+python3 backend/odds_sync.py --year 2026 --loop-seconds 300
+```
+
 ## Deploy Seed Assets (No Production Rescrape)
 
 To deploy with your **local curated** watch links and posters, export seed assets before push:
@@ -139,6 +169,16 @@ python3 backend/scrape_poster_images.py --year 2026 --force
 python3 backend/scrape_watch_links.py --year 2026 --force
 python3 backend/audit_watch_links.py --year 2026 --cutoff 2025
 ```
+
+## Odds-Weighted Scoring Data Plan
+
+- Import odds snapshots into `odds_snapshots` / `odds_snapshot_items` (manual import today, API plug-in ready).
+- Active snapshot state is tracked in `odds_sync_state` and used for new odds-weighted ballot submissions.
+- Each odds-weighted submission stores `odds_snapshot_id` at submit time.
+- Recommended schedule:
+  - Normal period: every 6 hours
+  - Oscar week: every 1 hour
+  - Live mode: every 2-5 minutes
 
 ## Google Analytics (GA4)
 

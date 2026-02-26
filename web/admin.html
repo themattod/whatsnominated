@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
     <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260225-24" />
   </head>
   <body class="admin-page">
     <main class="app-shell">
@@ -43,6 +43,7 @@
           <div class="admin-mode-actions">
             <button type="button" id="votingLockHeaderButton">Lock Voting</button>
             <button type="button" id="eventModeHeaderButton">Enable Live Mode</button>
+            <button type="button" id="clearWinnersButton" disabled>Clear Winners</button>
             <p id="eventModeSaveStatus" class="banner-save-status" aria-live="polite"></p>
           </div>
         </div>
@@ -60,25 +61,37 @@
         </div>
         <div class="control-card">
           <p class="control-title">Browse</p>
-          <div class="control-grid browse-grid">
+          <div class="control-grid ballot-grid">
             <label id="yearControl">
               Year
               <select id="yearSelect"></select>
             </label>
 
             <label>
-              Category View
-              <select id="categorySelect"></select>
-            </label>
-
-            <label id="sortWrap">
-              Sort
-              <select id="sortSelect">
-                <option value="title">Title (A-Z)</option>
-                <option value="nominations">Most Nominations</option>
-              </select>
+              Jump to Category
+              <select id="ballotJumpSelect"></select>
             </label>
           </div>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Pool troubleshooting">
+        <div class="control-card">
+          <p class="control-title">Pool Troubleshooting</p>
+          <form id="poolTroubleshootForm" class="pools-row">
+            <label class="compact">
+              Pool ID
+              <input id="poolTroubleshootPoolId" type="text" placeholder="Exact pool id" />
+            </label>
+            <label class="compact">
+              User Email
+              <input id="poolTroubleshootUserEmail" type="email" placeholder="member@example.com" />
+            </label>
+            <button type="submit">Search Pools</button>
+            <button type="button" id="poolTroubleshootReset">Reset</button>
+          </form>
+          <p id="poolTroubleshootStatus" class="banner-save-status" aria-live="polite"></p>
+          <div id="poolTroubleshootResults"></div>
         </div>
       </section>
 
@@ -86,44 +99,27 @@
       <section id="filmList" class="film-list" aria-live="polite"></section>
     </main>
 
-    <template id="filmCardTemplate">
-      <article class="film-card">
-        <button type="button" class="winner-button" hidden></button>
-
-        <div class="film-main">
-          <div class="poster-wrap">
-            <img class="poster-image" alt="" loading="lazy" decoding="async" fetchpriority="low" hidden />
-            <div class="poster-fallback" aria-label="No poster available">X</div>
+    <template id="adminFormTemplate">
+      <form class="admin-form">
+        <h3>Admin Overrides</h3>
+        <label>
+          <span>Where to Watch URL</span>
+          <div class="watch-label-toggle">
+            <input type="checkbox" name="freeToWatch" />
+            <span>Free to Watch</span>
           </div>
-          <div class="film-copy">
-            <h2 class="film-title"></h2>
-            <p class="film-meta"></p>
-            <div class="tags"></div>
-            <dl class="availability"></dl>
-          </div>
+          <input type="url" name="whereToWatchUrl" />
+        </label>
+        <label>Poster URL <input type="url" name="posterUrl" /></label>
+        <div class="admin-actions">
+          <button type="submit">Save</button>
+          <button type="button" class="clear-override-button">Clear watch override</button>
+          <button type="button" class="clear-poster-button">Clear poster override</button>
         </div>
-
-        <form class="admin-form">
-          <h3>Admin Overrides</h3>
-          <label>
-            <span>Where to Watch URL</span>
-            <div class="watch-label-toggle">
-              <input type="checkbox" name="freeToWatch" />
-              <span>Free to Watch</span>
-            </div>
-            <input type="url" name="whereToWatchUrl" />
-          </label>
-          <label>Poster URL <input type="url" name="posterUrl" /></label>
-          <div class="admin-actions">
-            <button type="submit">Save</button>
-            <button type="button" class="clear-override-button">Clear watch override</button>
-            <button type="button" class="clear-poster-button">Clear poster override</button>
-          </div>
-        </form>
-      </article>
+      </form>
     </template>
 
-    <script type="module" src="/admin.js"></script>
+    <script type="module" src="/admin.js?v=20260226-odds-disabled-1"></script>
     <script src="/analytics-config.js"></script>
     <script src="/analytics.js"></script>
   </body>

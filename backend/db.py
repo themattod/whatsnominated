@@ -1,18 +1,28 @@
 import sqlite3
+import os
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent.parent / 'data' / 'oscars.db'
 
 
-def connect():
-    conn = sqlite3.connect(DB_PATH)
+def _resolve_db_path(db_path=None):
+    if db_path:
+        return Path(db_path)
+    env_path = os.getenv('OSCAR_DB_PATH', '').strip()
+    if env_path:
+        return Path(env_path)
+    return DB_PATH
+
+
+def connect(db_path=None):
+    conn = sqlite3.connect(_resolve_db_path(db_path))
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA foreign_keys = ON')
     return conn
 
 
-def init_db():
-    conn = connect()
+def init_db(db_path=None):
+    conn = connect(db_path=db_path)
     cur = conn.cursor()
 
     cur.executescript(
@@ -193,6 +203,228 @@ def init_db():
           details TEXT DEFAULT '',
           imported_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL UNIQUE,
+          display_name TEXT NOT NULL DEFAULT '',
+          password_hash TEXT NOT NULL DEFAULT '',
+          email_verified_at TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS pools (
+          id TEXT PRIMARY KEY,
+          year INTEGER NOT NULL REFERENCES years(year) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          description TEXT DEFAULT '',
+          scoring_mode TEXT NOT NULL DEFAULT 'standard'
+            CHECK (scoring_mode IN ('standard','odds_weighted')),
+          entry_mode TEXT NOT NULL DEFAULT 'none'
+            CHECK (entry_mode IN ('none','manual_transfer')),
+          entry_fee_cents INTEGER,
+          currency TEXT NOT NULL DEFAULT 'USD',
+          payment_required_to_score INTEGER NOT NULL DEFAULT 1
+            CHECK (payment_required_to_score IN (0,1)),
+          allow_pool_overrides INTEGER NOT NULL DEFAULT 1
+            CHECK (allow_pool_overrides IN (0,1)),
+          tiebreaker_question TEXT DEFAULT '',
+          invite_policy TEXT NOT NULL DEFAULT 'both'
+            CHECK (invite_policy IN ('invite_only','share_link','both')),
+          status TEXT NOT NULL DEFAULT 'open'
+            CHECK (status IN ('open','locked','finalized')),
+          resolution_state TEXT NOT NULL DEFAULT 'open'
+            CHECK (resolution_state IN ('open','locked','pending_tiebreak','finalized')),
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_members (
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          role TEXT NOT NULL CHECK (role IN ('owner','member')),
+          display_name TEXT NOT NULL,
+          joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY(pool_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_invites (
+          id TEXT PRIMARY KEY,
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          created_by_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          invite_type TEXT NOT NULL CHECK (invite_type IN ('email','share_link')),
+          email TEXT DEFAULT '',
+          token_hash TEXT NOT NULL UNIQUE,
+          max_uses INTEGER,
+          uses_count INTEGER NOT NULL DEFAULT 0,
+          expires_at TEXT,
+          revoked_at TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_invite_acceptances (
+          id TEXT PRIMARY KEY,
+          invite_id TEXT NOT NULL REFERENCES pool_invites(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          accepted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(invite_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_global_picks (
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          year INTEGER NOT NULL REFERENCES years(year) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+          film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY(user_id, year, category_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_pick_overrides (
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+          film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY(pool_id, user_id, category_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS odds_snapshots (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          year INTEGER NOT NULL REFERENCES years(year) ON DELETE CASCADE,
+          source TEXT NOT NULL DEFAULT 'external_api',
+          captured_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          status TEXT NOT NULL DEFAULT 'ok' CHECK (status IN ('ok','partial','failed')),
+          raw_payload TEXT DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS odds_snapshot_items (
+          snapshot_id INTEGER NOT NULL REFERENCES odds_snapshots(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+          film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+          american_odds INTEGER NOT NULL,
+          implied_probability REAL NOT NULL DEFAULT 0.0,
+          weight_points REAL NOT NULL DEFAULT 1.0,
+          PRIMARY KEY(snapshot_id, category_id, film_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS odds_sync_state (
+          year INTEGER PRIMARY KEY REFERENCES years(year) ON DELETE CASCADE,
+          source TEXT NOT NULL DEFAULT 'external_api',
+          active_snapshot_id INTEGER REFERENCES odds_snapshots(id) ON DELETE SET NULL,
+          last_success_at TEXT,
+          last_attempt_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          last_status TEXT NOT NULL DEFAULT 'never'
+            CHECK (last_status IN ('never','ok','partial','failed')),
+          mapped_items INTEGER NOT NULL DEFAULT 0,
+          unmapped_items INTEGER NOT NULL DEFAULT 0,
+          last_error TEXT DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_submissions (
+          id TEXT PRIMARY KEY,
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          year INTEGER NOT NULL REFERENCES years(year) ON DELETE CASCADE,
+          submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          scoring_mode_snapshot TEXT NOT NULL CHECK (scoring_mode_snapshot IN ('standard','odds_weighted')),
+          odds_snapshot_id INTEGER REFERENCES odds_snapshots(id) ON DELETE SET NULL,
+          payment_required_to_score_snapshot INTEGER NOT NULL DEFAULT 1
+            CHECK (payment_required_to_score_snapshot IN (0,1)),
+          UNIQUE(pool_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_submission_picks (
+          submission_id TEXT NOT NULL REFERENCES pool_submissions(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+          film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+          points_possible_snapshot REAL NOT NULL DEFAULT 1.0,
+          PRIMARY KEY(submission_id, category_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_submission_tiebreaker_answers (
+          submission_id TEXT PRIMARY KEY REFERENCES pool_submissions(id) ON DELETE CASCADE,
+          answer_text TEXT NOT NULL DEFAULT '',
+          submitted_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_payment_methods (
+          id TEXT PRIMARY KEY,
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          method_type TEXT NOT NULL CHECK (method_type IN ('venmo','paypal','cashapp','zelle','other')),
+          handle_or_link TEXT NOT NULL DEFAULT '',
+          instructions TEXT DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_payments (
+          id TEXT PRIMARY KEY,
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          amount_cents INTEGER NOT NULL DEFAULT 0,
+          currency TEXT NOT NULL DEFAULT 'USD',
+          status TEXT NOT NULL DEFAULT 'pending'
+            CHECK (status IN ('pending','self_reported','confirmed','rejected','waived')),
+          proof_file_url TEXT DEFAULT '',
+          proof_note TEXT DEFAULT '',
+          reported_at TEXT,
+          confirmed_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+          confirmed_at TEXT,
+          rejection_reason TEXT DEFAULT '',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(pool_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_scores (
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          submission_id TEXT NOT NULL REFERENCES pool_submissions(id) ON DELETE CASCADE,
+          total_points REAL NOT NULL DEFAULT 0.0,
+          correct_count INTEGER NOT NULL DEFAULT 0,
+          rank_position INTEGER NOT NULL DEFAULT 1,
+          tied_count INTEGER NOT NULL DEFAULT 1,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY(pool_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_score_breakdown (
+          submission_id TEXT NOT NULL REFERENCES pool_submissions(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+          picked_film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+          winner_film_id TEXT REFERENCES films(id) ON DELETE SET NULL,
+          is_correct INTEGER CHECK (is_correct IN (0,1)),
+          points_awarded REAL NOT NULL DEFAULT 0.0,
+          PRIMARY KEY(submission_id, category_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS pool_tiebreak_reviews (
+          id TEXT PRIMARY KEY,
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          reviewer_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          submission_id TEXT NOT NULL REFERENCES pool_submissions(id) ON DELETE CASCADE,
+          result TEXT NOT NULL CHECK (result IN ('correct','incorrect')),
+          notes TEXT DEFAULT '',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS owner_notifications (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          pool_id TEXT NOT NULL REFERENCES pools(id) ON DELETE CASCADE,
+          type TEXT NOT NULL CHECK (type IN ('tiebreak_required','payment_review_required','system')),
+          payload_json TEXT DEFAULT '',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          read_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS user_sessions (
+          token TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          csrf_token TEXT NOT NULL DEFAULT '',
+          expires_at TEXT NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
         '''
     )
 
@@ -225,8 +457,6 @@ def init_db():
     )
     cur.executescript(
         '''
-        DROP TABLE IF EXISTS user_sessions;
-        DROP TABLE IF EXISTS users;
         DROP TABLE IF EXISTS category_pick_locks;
         DROP TABLE IF EXISTS admin_availability;
         '''
@@ -250,6 +480,37 @@ def init_db():
             );
             '''
         )
+
+    cur.executescript(
+        '''
+        CREATE INDEX IF NOT EXISTS idx_pools_year ON pools(year);
+        CREATE INDEX IF NOT EXISTS idx_pools_owner ON pools(owner_user_id);
+        CREATE INDEX IF NOT EXISTS idx_pools_status ON pools(status, resolution_state);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_pool_members_display_name_unique
+        ON pool_members(pool_id, lower(display_name));
+        CREATE INDEX IF NOT EXISTS idx_pool_members_user ON pool_members(user_id);
+
+        CREATE INDEX IF NOT EXISTS idx_pool_invites_pool ON pool_invites(pool_id);
+        CREATE INDEX IF NOT EXISTS idx_pool_invites_expires ON pool_invites(expires_at);
+
+        CREATE INDEX IF NOT EXISTS idx_user_global_picks_year ON user_global_picks(year, user_id);
+        CREATE INDEX IF NOT EXISTS idx_pool_pick_overrides_pool_user ON pool_pick_overrides(pool_id, user_id);
+
+        CREATE INDEX IF NOT EXISTS idx_pool_submissions_pool ON pool_submissions(pool_id);
+        CREATE INDEX IF NOT EXISTS idx_pool_submissions_user ON pool_submissions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_pool_submissions_year ON pool_submissions(year);
+
+        CREATE INDEX IF NOT EXISTS idx_pool_payments_pool_status ON pool_payments(pool_id, status);
+        CREATE INDEX IF NOT EXISTS idx_pool_payments_user ON pool_payments(user_id);
+
+        CREATE INDEX IF NOT EXISTS idx_pool_scores_pool_rank ON pool_scores(pool_id, rank_position, total_points DESC);
+        CREATE INDEX IF NOT EXISTS idx_pool_tiebreak_reviews_pool ON pool_tiebreak_reviews(pool_id);
+        CREATE INDEX IF NOT EXISTS idx_owner_notifications_user ON owner_notifications(user_id, read_at, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_odds_snapshots_year_captured ON odds_snapshots(year, captured_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_odds_items_category_film ON odds_snapshot_items(category_id, film_id);
+        '''
+    )
 
     conn.commit()
     conn.close()

@@ -3,6 +3,7 @@ import mimetypes
 import os
 import re
 import smtplib
+import sqlite3
 import hmac
 import hashlib
 import secrets
@@ -15,10 +16,39 @@ from urllib.parse import parse_qs, quote_plus, urlparse
 from urllib.request import Request, urlopen
 
 from db import connect, init_db
+from odds_sync import get_odds_status, import_manual_odds, sync_external_odds
+from pools_repo import (
+    PoolConflictError,
+    PoolForbiddenError,
+    PoolNotFoundError,
+    PoolValidationError,
+    accept_pool_invite,
+    create_pool_invite,
+    get_global_picks,
+    get_pool_effective_picks,
+    get_pool_leaderboard,
+    get_pool_public_leaderboard,
+    get_pool_results,
+    get_pool_submission_status,
+    list_pool_invites,
+    list_pool_members,
+    remove_pool_member,
+    revoke_pool_invite,
+    submit_pool_ballot,
+    recompute_pool_scores,
+    upsert_global_pick,
+    upsert_pool_override_pick,
+    update_member_display_name,
+    create_pool,
+    get_pool_for_member,
+    list_pools_for_member,
+    update_pool,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_ROOT = ROOT / 'web'
 POSTER_CACHE_ROOT = ROOT / 'data' / 'poster_cache'
+ODDS_FEATURE_ENABLED = False
 DEFAULT_USER_KEY = 'local-default-user'
 DEFAULT_BANNER_TEXT = (
     'MAKE YOUR PICKS BY SUNDAY, MARCH 15, 2026, 7PM PST - '
@@ -33,9 +63,15 @@ SMTP_PASS = os.getenv('OSCAR_SMTP_PASS', '').strip()
 SMTP_STARTTLS = os.getenv('OSCAR_SMTP_STARTTLS', '').lower() in {'1', 'true', 'yes'}
 ADMIN_SESSION_COOKIE = 'oscars_admin_session'
 ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 14
+USER_SESSION_COOKIE = 'oscars_user_session'
+USER_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 15 * 60
 LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10
 LOGIN_LOCKOUT_SECONDS = 15 * 60
+REGISTER_RATE_LIMIT_WINDOW_SECONDS = 15 * 60
+REGISTER_RATE_LIMIT_MAX_ATTEMPTS = 10
+INVITE_ACCEPT_RATE_LIMIT_WINDOW_SECONDS = 10 * 60
+INVITE_ACCEPT_RATE_LIMIT_MAX_ATTEMPTS = 30
 RESET_RATE_LIMIT_WINDOW_SECONDS = 15 * 60
 RESET_RATE_LIMIT_MAX_ATTEMPTS = 5
 MAX_JSON_BODY_BYTES = 1024 * 1024
@@ -54,6 +90,10 @@ class OscarHandler(SimpleHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     _login_attempts_by_key = {}
     _login_lockouts = {}
+    _user_login_attempts_by_key = {}
+    _user_login_lockouts = {}
+    _user_register_attempts_by_key = {}
+    _invite_accept_attempts_by_key = {}
     _reset_attempts_by_key = {}
 
     def __init__(self, *args, **kwargs):
@@ -187,6 +227,47 @@ class OscarHandler(SimpleHTTPRequestHandler):
                 return False
         return True
 
+    def _current_user(self):
+        token = self._parse_cookies().get(USER_SESSION_COOKIE)
+        if not token:
+            return None
+        conn = connect()
+        row = conn.execute(
+            '''
+            SELECT u.id, u.email, u.display_name, s.csrf_token
+            FROM user_sessions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.token = ? AND datetime(s.expires_at) > datetime('now')
+            ''',
+            (token,),
+        ).fetchone()
+        if not row:
+            conn.close()
+            return None
+        user = dict(row)
+        if not (user.get('csrf_token') or '').strip():
+            new_csrf = secrets.token_urlsafe(24)
+            conn.execute(
+                'UPDATE user_sessions SET csrf_token = ? WHERE token = ?',
+                (new_csrf, token),
+            )
+            conn.commit()
+            user['csrf_token'] = new_csrf
+        conn.close()
+        return user
+
+    def _require_user_api(self, require_csrf=False):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return False
+        if require_csrf:
+            csrf_header = (self.headers.get('X-CSRF-Token') or '').strip()
+            if not csrf_header or csrf_header != (user.get('csrf_token') or ''):
+                self._json({'ok': False, 'error': 'Invalid CSRF token.'}, status=HTTPStatus.FORBIDDEN)
+                return False
+        return True
+
     @staticmethod
     def _token_hash(token):
         return hashlib.sha256(token.encode('utf-8')).hexdigest()
@@ -243,6 +324,74 @@ class OscarHandler(SimpleHTTPRequestHandler):
                 self._login_lockouts[key] = now_ts + LOGIN_LOCKOUT_SECONDS
         return False
 
+    def _is_user_login_locked(self, email):
+        now_ts = time.time()
+        ip = self._client_ip()
+        keys = [f'user-email:{email.lower()}', f'user-ip:{ip}']
+        for key in keys:
+            locked_until = self._user_login_lockouts.get(key, 0)
+            if locked_until > now_ts:
+                return True
+            if locked_until:
+                self._user_login_lockouts.pop(key, None)
+        return False
+
+    def _record_user_login_attempt(self, email, success):
+        now_ts = time.time()
+        ip = self._client_ip()
+        keys = [f'user-email:{email.lower()}', f'user-ip:{ip}']
+        self._rate_limit_prune(
+            self._user_login_attempts_by_key,
+            now_ts,
+            LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+        )
+        if success:
+            for key in keys:
+                self._user_login_attempts_by_key.pop(key, None)
+                self._user_login_lockouts.pop(key, None)
+            return True
+        for key in keys:
+            attempts = self._user_login_attempts_by_key.setdefault(key, [])
+            attempts.append(now_ts)
+            if len(attempts) >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS:
+                self._user_login_lockouts[key] = now_ts + LOGIN_LOCKOUT_SECONDS
+        return False
+
+    def _is_user_register_rate_limited(self):
+        now_ts = time.time()
+        ip = self._client_ip()
+        key = f'register-ip:{ip}'
+        self._rate_limit_prune(
+            self._user_register_attempts_by_key,
+            now_ts,
+            REGISTER_RATE_LIMIT_WINDOW_SECONDS,
+        )
+        attempts = self._user_register_attempts_by_key.setdefault(key, [])
+        if len(attempts) >= REGISTER_RATE_LIMIT_MAX_ATTEMPTS:
+            return True
+        attempts.append(now_ts)
+        return False
+
+    def _is_invite_accept_rate_limited(self, user_id=''):
+        now_ts = time.time()
+        ip = self._client_ip()
+        keys = [f'invite-ip:{ip}']
+        if user_id:
+            keys.append(f'invite-user:{user_id}')
+        self._rate_limit_prune(
+            self._invite_accept_attempts_by_key,
+            now_ts,
+            INVITE_ACCEPT_RATE_LIMIT_WINDOW_SECONDS,
+        )
+        limited = False
+        for key in keys:
+            attempts = self._invite_accept_attempts_by_key.setdefault(key, [])
+            if len(attempts) >= INVITE_ACCEPT_RATE_LIMIT_MAX_ATTEMPTS:
+                limited = True
+            else:
+                attempts.append(now_ts)
+        return limited
+
     def _is_reset_rate_limited(self, email):
         now_ts = time.time()
         ip = self._client_ip()
@@ -273,6 +422,22 @@ class OscarHandler(SimpleHTTPRequestHandler):
         conn.close()
         return token, csrf_token
 
+    def _create_user_session(self, user_id):
+        self._prune_user_auth_artifacts()
+        token = secrets.token_urlsafe(32)
+        csrf_token = secrets.token_urlsafe(24)
+        conn = connect()
+        conn.execute(
+            '''
+            INSERT INTO user_sessions(token, user_id, csrf_token, expires_at)
+            VALUES(?, ?, ?, datetime('now', '+30 days'))
+            ''',
+            (token, user_id, csrf_token),
+        )
+        conn.commit()
+        conn.close()
+        return token, csrf_token
+
     def _prune_admin_auth_artifacts(self):
         conn = connect()
         conn.execute(
@@ -285,6 +450,17 @@ class OscarHandler(SimpleHTTPRequestHandler):
             '''
             DELETE FROM admin_password_resets
             WHERE used_at IS NOT NULL OR datetime(expires_at) <= datetime('now')
+            '''
+        )
+        conn.commit()
+        conn.close()
+
+    def _prune_user_auth_artifacts(self):
+        conn = connect()
+        conn.execute(
+            '''
+            DELETE FROM user_sessions
+            WHERE datetime(expires_at) <= datetime('now')
             '''
         )
         conn.commit()
@@ -308,6 +484,15 @@ class OscarHandler(SimpleHTTPRequestHandler):
             return
         conn = connect()
         conn.execute('DELETE FROM admin_sessions WHERE token = ?', (token,))
+        conn.commit()
+        conn.close()
+
+    def _clear_user_session(self):
+        token = self._parse_cookies().get(USER_SESSION_COOKIE)
+        if not token:
+            return
+        conn = connect()
+        conn.execute('DELETE FROM user_sessions WHERE token = ?', (token,))
         conn.commit()
         conn.close()
 
@@ -398,6 +583,10 @@ class OscarHandler(SimpleHTTPRequestHandler):
             return f'https://www.justwatch.com/us/movie/{slug}'
         return search_url
 
+    @staticmethod
+    def _is_public_pool_api_path(path):
+        return bool(re.match(r'^/api/pools/[^/]+/(public|recap/public)(?:/.*)?$', path or ''))
+
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path in {'/admin.html', '/admin-audit.html'} and not self._current_admin():
@@ -428,25 +617,113 @@ class OscarHandler(SimpleHTTPRequestHandler):
             return self._handle_api_post(parsed)
         self.send_error(HTTPStatus.NOT_FOUND)
 
+    def do_PATCH(self):
+        parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/'):
+            return self._handle_api_patch(parsed)
+        self.send_error(HTTPStatus.NOT_FOUND)
+
+    def do_DELETE(self):
+        parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/'):
+            return self._handle_api_delete(parsed)
+        self.send_error(HTTPStatus.NOT_FOUND)
+
     def _handle_api_get(self, parsed):
         query = parse_qs(parsed.query)
         if parsed.path == '/api/admin-auth/session':
             return self._get_admin_auth_session()
+        if parsed.path == '/api/auth/session':
+            return self._get_user_auth_session()
         if parsed.path == '/api/years':
             return self._get_years()
+        if parsed.path.startswith('/api/picks'):
+            if not self._require_user_api():
+                return
+        if (
+            (parsed.path.startswith('/api/pools') or parsed.path.startswith('/api/invites'))
+            and not self._is_public_pool_api_path(parsed.path)
+        ):
+            if not self._require_user_api():
+                return
         if parsed.path.startswith('/api/admin/audit'):
             if not self._require_admin_api():
                 return
             return self._get_admin_audit_logs(query)
+        if parsed.path == '/api/admin/pools/troubleshoot':
+            if not self._require_admin_api():
+                return
+            return self._get_admin_pools_troubleshoot(query)
+        admin_pool_detail_match = re.match(r'^/api/admin/pools/([^/]+)/troubleshoot$', parsed.path)
+        if admin_pool_detail_match:
+            if not self._require_admin_api():
+                return
+            return self._get_admin_pool_troubleshoot_detail(admin_pool_detail_match.group(1))
         if parsed.path == '/api/admin/dashboard':
             if not self._require_admin_api():
                 return
             year = int(query.get('year', ['2026'])[0])
             return self._get_admin_dashboard(year)
+        if parsed.path == '/api/admin/odds/status':
+            if not self._require_admin_api():
+                return
+            if not ODDS_FEATURE_ENABLED:
+                self._json({'ok': False, 'error': 'Odds feature is disabled.'}, status=HTTPStatus.GONE)
+                return
+            year = int(query.get('year', ['2026'])[0])
+            return self._get_admin_odds_status(year)
         if parsed.path == '/api/nominees':
             year = int(query.get('year', ['2026'])[0])
             category = query.get('category', ['__ALL__'])[0]
             return self._get_nominees(year, category)
+        if parsed.path == '/api/picks/global':
+            year_value = query.get('year', [''])[0].strip()
+            if not year_value:
+                self._json({'ok': False, 'error': 'year is required.'}, status=HTTPStatus.BAD_REQUEST)
+                return
+            try:
+                year = int(year_value)
+            except ValueError:
+                self._json({'ok': False, 'error': 'Invalid year.'}, status=HTTPStatus.BAD_REQUEST)
+                return
+            return self._get_global_picks_api(year)
+        if parsed.path == '/api/pools':
+            year_value = query.get('year', [''])[0].strip()
+            year = None
+            if year_value:
+                try:
+                    year = int(year_value)
+                except ValueError:
+                    self._json({'ok': False, 'error': 'Invalid year.'}, status=HTTPStatus.BAD_REQUEST)
+                    return
+            return self._get_pools(year=year)
+        pool_members_match = re.match(r'^/api/pools/([^/]+)/members$', parsed.path)
+        if pool_members_match:
+            return self._get_pool_members(pool_members_match.group(1))
+        pool_picks_match = re.match(r'^/api/pools/([^/]+)/picks$', parsed.path)
+        if pool_picks_match:
+            return self._get_pool_picks(pool_picks_match.group(1))
+        pool_submission_status_match = re.match(r'^/api/pools/([^/]+)/submission-status$', parsed.path)
+        if pool_submission_status_match:
+            return self._get_pool_submission_status(pool_submission_status_match.group(1))
+        pool_leaderboard_match = re.match(r'^/api/pools/([^/]+)/leaderboard$', parsed.path)
+        if pool_leaderboard_match:
+            return self._get_pool_leaderboard_api(pool_leaderboard_match.group(1))
+        pool_results_user_match = re.match(r'^/api/pools/([^/]+)/results/([^/]+)$', parsed.path)
+        if pool_results_user_match:
+            return self._get_pool_results_api(pool_results_user_match.group(1), pool_results_user_match.group(2))
+        pool_results_match = re.match(r'^/api/pools/([^/]+)/results$', parsed.path)
+        if pool_results_match:
+            return self._get_pool_results_api(pool_results_match.group(1), '')
+        pool_invites_match = re.match(r'^/api/pools/([^/]+)/invites$', parsed.path)
+        if pool_invites_match:
+            return self._get_pool_invites(pool_invites_match.group(1))
+        pool_public_match = re.match(r'^/api/pools/([^/]+)/public$', parsed.path)
+        if pool_public_match:
+            return self._get_pool_public_api(pool_public_match.group(1))
+        pool_id_match = re.match(r'^/api/pools/([^/]+)$', parsed.path)
+        if pool_id_match:
+            return self._get_pool(pool_id_match.group(1))
         if parsed.path == '/api/user-state':
             year = int(query.get('year', ['2026'])[0])
             user_key = query.get('userKey', [''])[0]
@@ -459,6 +736,12 @@ class OscarHandler(SimpleHTTPRequestHandler):
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def _handle_api_put(self, parsed):
+        if parsed.path.startswith('/api/picks'):
+            if not self._require_user_api(require_csrf=True):
+                return
+        if parsed.path.startswith('/api/pools'):
+            if not self._require_user_api(require_csrf=True):
+                return
         if parsed.path == '/api/user-state':
             body = self._read_json_body()
             if body is None:
@@ -469,6 +752,17 @@ class OscarHandler(SimpleHTTPRequestHandler):
             if body is None:
                 return
             return self._put_user_pick(body)
+        if parsed.path == '/api/picks/global':
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._put_global_pick_api(body)
+        pool_picks_match = re.match(r'^/api/pools/([^/]+)/picks$', parsed.path)
+        if pool_picks_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._put_pool_pick_api(pool_picks_match.group(1), body)
         if parsed.path == '/api/admin/where-to-watch':
             if not self._require_admin_api(require_csrf=True):
                 return
@@ -511,10 +805,36 @@ class OscarHandler(SimpleHTTPRequestHandler):
             if body is None:
                 return
             return self._put_admin_winner(body)
+        admin_pool_payment_match = re.match(r'^/api/admin/pools/([^/]+)/payments$', parsed.path)
+        if admin_pool_payment_match:
+            if not self._require_admin_api(require_csrf=True):
+                return
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._put_admin_pool_payment_status(admin_pool_payment_match.group(1), body)
 
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def _handle_api_post(self, parsed):
+        if parsed.path == '/api/auth/register':
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_user_auth_register(body)
+        if parsed.path == '/api/auth/login':
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_user_auth_login(body)
+        if parsed.path == '/api/auth/logout':
+            return self._post_user_auth_logout()
+        if (
+            (parsed.path.startswith('/api/pools') or parsed.path.startswith('/api/invites'))
+            and not self._is_public_pool_api_path(parsed.path)
+        ):
+            if not self._require_user_api(require_csrf=True):
+                return
         if parsed.path == '/api/admin-auth/login':
             body = self._read_json_body()
             if body is None:
@@ -537,7 +857,125 @@ class OscarHandler(SimpleHTTPRequestHandler):
             if body is None:
                 return
             return self._post_contact(body)
+        if parsed.path == '/api/admin/odds/sync':
+            if not self._require_admin_api(require_csrf=True):
+                return
+            if not ODDS_FEATURE_ENABLED:
+                self._json({'ok': False, 'error': 'Odds feature is disabled.'}, status=HTTPStatus.GONE)
+                return
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_admin_odds_sync(body)
+        if parsed.path == '/api/admin/odds/import':
+            if not self._require_admin_api(require_csrf=True):
+                return
+            if not ODDS_FEATURE_ENABLED:
+                self._json({'ok': False, 'error': 'Odds feature is disabled.'}, status=HTTPStatus.GONE)
+                return
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_admin_odds_import(body)
+        admin_pool_recompute_match = re.match(r'^/api/admin/pools/([^/]+)/recompute-scores$', parsed.path)
+        if admin_pool_recompute_match:
+            if not self._require_admin_api(require_csrf=True):
+                return
+            return self._post_admin_pool_recompute_scores(admin_pool_recompute_match.group(1))
+        if parsed.path == '/api/pools':
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_pool(body)
+        pool_submit_match = re.match(r'^/api/pools/([^/]+)/submit$', parsed.path)
+        if pool_submit_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_pool_submit(pool_submit_match.group(1), body)
+        pool_invite_email_match = re.match(r'^/api/pools/([^/]+)/invites/email$', parsed.path)
+        if pool_invite_email_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_pool_invite_email(pool_invite_email_match.group(1), body)
+        pool_invite_link_match = re.match(r'^/api/pools/([^/]+)/invites/link$', parsed.path)
+        if pool_invite_link_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_pool_invite_link(pool_invite_link_match.group(1), body)
+        invite_accept_match = re.match(r'^/api/invites/([^/]+)/accept$', parsed.path)
+        if invite_accept_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._post_pool_invite_accept(invite_accept_match.group(1), body)
+        pool_invite_revoke_match = re.match(r'^/api/pools/([^/]+)/invites/([^/]+)/revoke$', parsed.path)
+        if pool_invite_revoke_match:
+            return self._post_pool_invite_revoke(
+                pool_invite_revoke_match.group(1),
+                pool_invite_revoke_match.group(2),
+            )
         self.send_error(HTTPStatus.NOT_FOUND)
+
+    def _handle_api_patch(self, parsed):
+        if (
+            (parsed.path.startswith('/api/pools') or parsed.path.startswith('/api/invites'))
+            and not self._is_public_pool_api_path(parsed.path)
+        ):
+            if not self._require_user_api(require_csrf=True):
+                return
+        pool_id_match = re.match(r'^/api/pools/([^/]+)$', parsed.path)
+        if pool_id_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._patch_pool(pool_id_match.group(1), body)
+        member_display_name_match = re.match(
+            r'^/api/pools/([^/]+)/members/([^/]+)/display-name$',
+            parsed.path,
+        )
+        if member_display_name_match:
+            body = self._read_json_body()
+            if body is None:
+                return
+            return self._patch_pool_member_display_name(
+                member_display_name_match.group(1),
+                member_display_name_match.group(2),
+                body,
+            )
+        self.send_error(HTTPStatus.NOT_FOUND)
+
+    def _handle_api_delete(self, parsed):
+        if (
+            (parsed.path.startswith('/api/pools') or parsed.path.startswith('/api/invites'))
+            and not self._is_public_pool_api_path(parsed.path)
+        ):
+            if not self._require_user_api(require_csrf=True):
+                return
+        pool_member_match = re.match(r'^/api/pools/([^/]+)/members/([^/]+)$', parsed.path)
+        if pool_member_match:
+            return self._delete_pool_member(
+                pool_member_match.group(1),
+                pool_member_match.group(2),
+            )
+        self.send_error(HTTPStatus.NOT_FOUND)
+
+    def _pool_error_json(self, error):
+        if isinstance(error, PoolValidationError):
+            self._json({'ok': False, 'error': str(error)}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if isinstance(error, PoolForbiddenError):
+            self._json({'ok': False, 'error': str(error)}, status=HTTPStatus.FORBIDDEN)
+            return
+        if isinstance(error, PoolConflictError):
+            self._json({'ok': False, 'error': str(error)}, status=HTTPStatus.CONFLICT)
+            return
+        if isinstance(error, PoolNotFoundError):
+            self._json({'ok': False, 'error': str(error)}, status=HTTPStatus.NOT_FOUND)
+            return
+        self._json({'ok': False, 'error': 'Unexpected pool error.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def _get_admin_auth_session(self):
         admin = self._current_admin()
@@ -550,6 +988,129 @@ class OscarHandler(SimpleHTTPRequestHandler):
                 'admin': {'id': admin['id'], 'email': admin['email']},
                 'csrfToken': admin.get('csrf_token') or '',
             }
+        )
+
+    def _get_user_auth_session(self):
+        user = self._current_user()
+        if not user:
+            self._json({'loggedIn': False})
+            return
+        self._json(
+            {
+                'loggedIn': True,
+                'user': {
+                    'id': user['id'],
+                    'email': user['email'],
+                    'displayName': user.get('display_name') or '',
+                },
+                'csrfToken': user.get('csrf_token') or '',
+            }
+        )
+
+    def _post_user_auth_register(self, body):
+        if self._is_user_register_rate_limited():
+            self._json(
+                {'ok': False, 'error': 'Too many signup attempts. Try again later.'},
+                status=HTTPStatus.TOO_MANY_REQUESTS,
+            )
+            return
+        email = (body.get('email') or '').strip().lower()
+        password = body.get('password') or ''
+        display_name = (body.get('displayName') or '').strip()
+        if not email or '@' not in email:
+            self._json({'ok': False, 'error': 'Valid email is required.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if len(password) < 8:
+            self._json({'ok': False, 'error': 'Password must be at least 8 characters.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        user_id = secrets.token_hex(16)
+        password_hash = self._password_hash(password)
+        conn = connect()
+        try:
+            conn.execute(
+                '''
+                INSERT INTO users(id, email, display_name, password_hash)
+                VALUES(?, ?, ?, ?)
+                ''',
+                (user_id, email, display_name, password_hash),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            self._json({'ok': False, 'error': 'An account with that email already exists.'}, status=HTTPStatus.CONFLICT)
+            return
+        conn.close()
+
+        token, csrf_token = self._create_user_session(user_id)
+        self._json(
+            {
+                'ok': True,
+                'loggedIn': True,
+                'user': {'id': user_id, 'email': email, 'displayName': display_name},
+                'csrfToken': csrf_token,
+            },
+            extra_headers={
+                'Set-Cookie': (
+                    f'{USER_SESSION_COOKIE}={token}; {self._cookie_attrs()}; '
+                    f'Max-Age={USER_SESSION_TTL_SECONDS}'
+                )
+            },
+        )
+
+    def _post_user_auth_login(self, body):
+        email = (body.get('email') or '').strip().lower()
+        password = body.get('password') or ''
+        if self._is_user_login_locked(email):
+            self._json(
+                {'ok': False, 'error': 'Too many attempts. Try again later.'},
+                status=HTTPStatus.TOO_MANY_REQUESTS,
+            )
+            return
+        conn = connect()
+        row = conn.execute(
+            'SELECT id, email, display_name, password_hash FROM users WHERE lower(email) = ?',
+            (email,),
+        ).fetchone()
+        conn.close()
+
+        if not row or not self._verify_password(password, row['password_hash']):
+            self._record_user_login_attempt(email, False)
+            self._json({'ok': False, 'error': 'Invalid email or password.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+
+        self._record_user_login_attempt(email, True)
+        token, csrf_token = self._create_user_session(row['id'])
+        self._json(
+            {
+                'ok': True,
+                'loggedIn': True,
+                'user': {
+                    'id': row['id'],
+                    'email': row['email'],
+                    'displayName': row['display_name'] or '',
+                },
+                'csrfToken': csrf_token,
+            },
+            extra_headers={
+                'Set-Cookie': (
+                    f'{USER_SESSION_COOKIE}={token}; {self._cookie_attrs()}; '
+                    f'Max-Age={USER_SESSION_TTL_SECONDS}'
+                )
+            },
+        )
+
+    def _post_user_auth_logout(self):
+        user = self._current_user()
+        if user and not self._require_user_api(require_csrf=True):
+            return
+        self._clear_user_session()
+        self._json(
+            {'ok': True},
+            extra_headers={
+                'Set-Cookie': (
+                    f'{USER_SESSION_COOKIE}=; {self._cookie_attrs()}; Max-Age=0'
+                )
+            },
         )
 
     def _post_admin_auth_login(self, body):
@@ -801,6 +1362,815 @@ class OscarHandler(SimpleHTTPRequestHandler):
         conn.close()
         self._json({'years': [dict(row) for row in rows]})
 
+    def _get_pools(self, year=None):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            pools = list_pools_for_member(conn, user['id'], year=year)
+            self._json({'ok': True, 'pools': pools})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool(self, pool_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            pool = get_pool_for_member(conn, pool_id, user['id'])
+            self._json({'ok': True, 'pool': pool})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_members(self, pool_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            members = list_pool_members(conn, pool_id, user['id'])
+            self._json({'ok': True, 'members': members})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_invites(self, pool_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            invites = list_pool_invites(conn, pool_id, user['id'])
+            self._json({'ok': True, 'invites': invites})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_global_picks_api(self, year):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            picks = get_global_picks(conn, user['id'], year)
+            self._json({'ok': True, **picks})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _put_global_pick_api(self, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        year_raw = body.get('year')
+        if year_raw in (None, ''):
+            self._json({'ok': False, 'error': 'year is required.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        try:
+            year = int(year_raw)
+        except (TypeError, ValueError):
+            self._json({'ok': False, 'error': 'Invalid year.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        conn = connect()
+        try:
+            picks = upsert_global_pick(
+                conn,
+                user_id=user['id'],
+                year=year,
+                category_id=body.get('categoryId'),
+                category_name=body.get('categoryName', ''),
+                film_id=body.get('filmId', ''),
+            )
+            self._json({'ok': True, **picks})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_picks(self, pool_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            picks = get_pool_effective_picks(conn, pool_id, user['id'])
+            self._json({'ok': True, **picks})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _put_pool_pick_api(self, pool_id, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            picks = upsert_pool_override_pick(
+                conn,
+                pool_id=pool_id,
+                user_id=user['id'],
+                category_id=body.get('categoryId'),
+                category_name=body.get('categoryName', ''),
+                film_id=body.get('filmId', ''),
+            )
+            self._json({'ok': True, **picks})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_submission_status(self, pool_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            status = get_pool_submission_status(conn, pool_id, user['id'])
+            self._json({'ok': True, **status})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _post_pool_submit(self, pool_id, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            result = submit_pool_ballot(
+                conn,
+                pool_id=pool_id,
+                user_id=user['id'],
+                tiebreaker_answer=body.get('tiebreakerAnswer', ''),
+            )
+            self._json(result, status=HTTPStatus.CREATED)
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_leaderboard_api(self, pool_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            payload = get_pool_leaderboard(conn, pool_id, user['id'])
+            self._json({'ok': True, **payload})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_results_api(self, pool_id, target_user_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            payload = get_pool_results(
+                conn,
+                pool_id=pool_id,
+                requester_user_id=user['id'],
+                target_user_id=(target_user_id or ''),
+            )
+            self._json({'ok': True, **payload})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_pool_public_api(self, pool_id):
+        conn = connect()
+        try:
+            payload = get_pool_public_leaderboard(conn, pool_id)
+            self._json({'ok': True, **payload})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _post_pool(self, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            pool = create_pool(
+                conn,
+                owner_user_id=user['id'],
+                name=body.get('name'),
+                description=body.get('description', ''),
+                scoring_mode=body.get('scoringMode', 'standard'),
+                entry_mode=body.get('entryMode', 'none'),
+                entry_fee_cents=body.get('entryFeeCents'),
+                currency=body.get('currency', 'USD'),
+                payment_required_to_score=body.get('paymentRequiredToScore', True),
+                allow_pool_overrides=body.get('allowPoolOverrides', True),
+                tiebreaker_question=body.get('tiebreakerQuestion', ''),
+                invite_policy=body.get('invitePolicy', 'both'),
+                owner_display_name=body.get('ownerDisplayName', ''),
+            )
+            self._json({'ok': True, 'pool': pool}, status=HTTPStatus.CREATED)
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _post_pool_invite_email(self, pool_id, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            invite = create_pool_invite(
+                conn,
+                pool_id=pool_id,
+                owner_user_id=user['id'],
+                invite_type='email',
+                email=body.get('email', ''),
+                max_uses=body.get('maxUses'),
+                expires_at=body.get('expiresAt'),
+            )
+            self._json({'ok': True, 'invite': invite}, status=HTTPStatus.CREATED)
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _post_pool_invite_link(self, pool_id, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            invite = create_pool_invite(
+                conn,
+                pool_id=pool_id,
+                owner_user_id=user['id'],
+                invite_type='share_link',
+                max_uses=body.get('maxUses'),
+                expires_at=body.get('expiresAt'),
+            )
+            self._json({'ok': True, 'invite': invite}, status=HTTPStatus.CREATED)
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _post_pool_invite_accept(self, token, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        if self._is_invite_accept_rate_limited(user_id=user['id']):
+            self._json(
+                {'ok': False, 'error': 'Too many invite attempts. Try again later.'},
+                status=HTTPStatus.TOO_MANY_REQUESTS,
+            )
+            return
+        conn = connect()
+        try:
+            pool = accept_pool_invite(
+                conn,
+                raw_token=token,
+                user_id=user['id'],
+                display_name=body.get('displayName', ''),
+            )
+            self._json({'ok': True, 'pool': pool})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _post_pool_invite_revoke(self, pool_id, invite_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            result = revoke_pool_invite(
+                conn,
+                pool_id=pool_id,
+                invite_id=invite_id,
+                owner_user_id=user['id'],
+            )
+            self._json(result)
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _patch_pool_member_display_name(self, pool_id, target_user_id, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            members = update_member_display_name(
+                conn,
+                pool_id=pool_id,
+                target_user_id=target_user_id,
+                actor_user_id=user['id'],
+                display_name=body.get('displayName', ''),
+            )
+            self._json({'ok': True, 'members': members})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _delete_pool_member(self, pool_id, target_user_id):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        conn = connect()
+        try:
+            result = remove_pool_member(
+                conn,
+                pool_id=pool_id,
+                target_user_id=target_user_id,
+                owner_user_id=user['id'],
+            )
+            self._json(result)
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _patch_pool(self, pool_id, body):
+        user = self._current_user()
+        if not user:
+            self._json({'ok': False, 'error': 'Login required.'}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        updates = {}
+        field_map = {
+            'name': 'name',
+            'description': 'description',
+            'scoringMode': 'scoring_mode',
+            'entryMode': 'entry_mode',
+            'entryFeeCents': 'entry_fee_cents',
+            'currency': 'currency',
+            'paymentRequiredToScore': 'payment_required_to_score',
+            'allowPoolOverrides': 'allow_pool_overrides',
+            'tiebreakerQuestion': 'tiebreaker_question',
+            'invitePolicy': 'invite_policy',
+        }
+        for key, repo_key in field_map.items():
+            if key in body:
+                updates[repo_key] = body.get(key)
+
+        conn = connect()
+        try:
+            pool = update_pool(conn, pool_id, user['id'], updates)
+            self._json({'ok': True, 'pool': pool})
+        except Exception as error:
+            self._pool_error_json(error)
+        finally:
+            conn.close()
+
+    def _get_admin_pools_troubleshoot(self, query):
+        admin = self._current_admin()
+        pool_id = (query.get('poolId', [''])[0] or '').strip()
+        user_email = (query.get('userEmail', [''])[0] or '').strip().lower()
+        year_value = (query.get('year', [''])[0] or '').strip()
+        limit_value = (query.get('limit', ['25'])[0] or '25').strip()
+        try:
+            limit = max(1, min(100, int(limit_value)))
+        except ValueError:
+            limit = 25
+
+        conn = connect()
+        try:
+            user_id_filter = ''
+            if user_email:
+                row = conn.execute(
+                    'SELECT id FROM users WHERE lower(email) = ?',
+                    (user_email,),
+                ).fetchone()
+                if row:
+                    user_id_filter = row['id']
+
+            sql = '''
+                SELECT
+                  p.id AS poolId,
+                  p.year AS year,
+                  p.name AS name,
+                  p.status AS status,
+                  p.resolution_state AS resolutionState,
+                  p.entry_mode AS entryMode,
+                  p.payment_required_to_score AS paymentRequiredToScore,
+                  p.allow_pool_overrides AS allowPoolOverrides,
+                  p.owner_user_id AS ownerUserId,
+                  ou.email AS ownerEmail,
+                  COALESCE(member_stats.memberCount, 0) AS memberCount,
+                  COALESCE(sub_stats.submissionCount, 0) AS submissionCount,
+                  COALESCE(pay_stats.exceptionCount, 0) AS paymentExceptionCount,
+                  p.created_at AS createdAt,
+                  p.updated_at AS updatedAt
+                FROM pools p
+                LEFT JOIN users ou ON ou.id = p.owner_user_id
+                LEFT JOIN (
+                  SELECT pool_id, COUNT(*) AS memberCount
+                  FROM pool_members
+                  GROUP BY pool_id
+                ) member_stats ON member_stats.pool_id = p.id
+                LEFT JOIN (
+                  SELECT pool_id, COUNT(*) AS submissionCount
+                  FROM pool_submissions
+                  GROUP BY pool_id
+                ) sub_stats ON sub_stats.pool_id = p.id
+                LEFT JOIN (
+                  SELECT pool_id, COUNT(*) AS exceptionCount
+                  FROM pool_payments
+                  WHERE status IN ('pending', 'self_reported', 'rejected')
+                  GROUP BY pool_id
+                ) pay_stats ON pay_stats.pool_id = p.id
+                WHERE 1 = 1
+            '''
+            params = []
+            if pool_id:
+                sql += ' AND p.id = ?'
+                params.append(pool_id)
+            if year_value:
+                try:
+                    year = int(year_value)
+                    sql += ' AND p.year = ?'
+                    params.append(year)
+                except ValueError:
+                    pass
+            if user_id_filter:
+                sql += '''
+                  AND (
+                    p.owner_user_id = ?
+                    OR EXISTS(
+                      SELECT 1
+                      FROM pool_members pmf
+                      WHERE pmf.pool_id = p.id AND pmf.user_id = ?
+                    )
+                  )
+                '''
+                params.extend([user_id_filter, user_id_filter])
+            elif user_email:
+                sql += ' AND 1 = 0'
+
+            sql += ' ORDER BY p.updated_at DESC, p.created_at DESC LIMIT ?'
+            params.append(limit)
+
+            rows = [dict(row) for row in conn.execute(sql, tuple(params)).fetchall()]
+            self._audit_admin(
+                'admin_pool_troubleshoot_search',
+                success=True,
+                admin=admin,
+                details={'poolId': pool_id, 'userEmail': user_email, 'year': year_value, 'rows': len(rows)},
+            )
+            self._json({'ok': True, 'pools': rows})
+        except Exception as error:
+            self._audit_admin(
+                'admin_pool_troubleshoot_search',
+                success=False,
+                admin=admin,
+                details={'poolId': pool_id, 'userEmail': user_email, 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Unable to load pool troubleshooting results.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
+
+    def _get_admin_pool_troubleshoot_detail(self, pool_id):
+        admin = self._current_admin()
+        conn = connect()
+        try:
+            pool = conn.execute(
+                '''
+                SELECT
+                  p.id AS poolId,
+                  p.year AS year,
+                  p.name AS name,
+                  p.description AS description,
+                  p.scoring_mode AS scoringMode,
+                  p.entry_mode AS entryMode,
+                  p.entry_fee_cents AS entryFeeCents,
+                  p.currency AS currency,
+                  p.payment_required_to_score AS paymentRequiredToScore,
+                  p.allow_pool_overrides AS allowPoolOverrides,
+                  p.tiebreaker_question AS tiebreakerQuestion,
+                  p.invite_policy AS invitePolicy,
+                  p.status AS status,
+                  p.resolution_state AS resolutionState,
+                  p.owner_user_id AS ownerUserId,
+                  ou.email AS ownerEmail,
+                  p.created_at AS createdAt,
+                  p.updated_at AS updatedAt
+                FROM pools p
+                LEFT JOIN users ou ON ou.id = p.owner_user_id
+                WHERE p.id = ?
+                ''',
+                (pool_id,),
+            ).fetchone()
+            if not pool:
+                self._json({'ok': False, 'error': 'Pool not found.'}, status=HTTPStatus.NOT_FOUND)
+                return
+
+            members = [
+                dict(row) for row in conn.execute(
+                    '''
+                    SELECT
+                      pm.user_id AS userId,
+                      pm.role AS role,
+                      pm.display_name AS displayName,
+                      pm.joined_at AS joinedAt,
+                      u.email AS email
+                    FROM pool_members pm
+                    LEFT JOIN users u ON u.id = pm.user_id
+                    WHERE pm.pool_id = ?
+                    ORDER BY CASE WHEN pm.role = 'owner' THEN 0 ELSE 1 END, lower(pm.display_name) ASC
+                    ''',
+                    (pool_id,),
+                ).fetchall()
+            ]
+
+            invites = [
+                dict(row) for row in conn.execute(
+                    '''
+                    SELECT
+                      pi.id AS inviteId,
+                      pi.invite_type AS inviteType,
+                      pi.email AS email,
+                      pi.max_uses AS maxUses,
+                      pi.uses_count AS usesCount,
+                      pi.expires_at AS expiresAt,
+                      pi.revoked_at AS revokedAt,
+                      pi.created_at AS createdAt,
+                      u.email AS createdByEmail
+                    FROM pool_invites pi
+                    LEFT JOIN users u ON u.id = pi.created_by_user_id
+                    WHERE pi.pool_id = ?
+                    ORDER BY pi.created_at DESC
+                    ''',
+                    (pool_id,),
+                ).fetchall()
+            ]
+
+            submissions = [
+                dict(row) for row in conn.execute(
+                    '''
+                    SELECT
+                      ps.id AS submissionId,
+                      ps.user_id AS userId,
+                      pm.display_name AS displayName,
+                      u.email AS email,
+                      ps.submitted_at AS submittedAt,
+                      ps.scoring_mode_snapshot AS scoringModeSnapshot,
+                      ps.payment_required_to_score_snapshot AS paymentRequiredToScoreSnapshot,
+                      COALESCE(pick_count.pickCount, 0) AS pickCount
+                    FROM pool_submissions ps
+                    LEFT JOIN users u ON u.id = ps.user_id
+                    LEFT JOIN pool_members pm ON pm.pool_id = ps.pool_id AND pm.user_id = ps.user_id
+                    LEFT JOIN (
+                      SELECT submission_id, COUNT(*) AS pickCount
+                      FROM pool_submission_picks
+                      GROUP BY submission_id
+                    ) pick_count ON pick_count.submission_id = ps.id
+                    WHERE ps.pool_id = ?
+                    ORDER BY ps.submitted_at ASC
+                    ''',
+                    (pool_id,),
+                ).fetchall()
+            ]
+
+            payments = [
+                dict(row) for row in conn.execute(
+                    '''
+                    SELECT
+                      pp.id AS paymentId,
+                      pp.user_id AS userId,
+                      pm.display_name AS displayName,
+                      u.email AS email,
+                      pp.amount_cents AS amountCents,
+                      pp.currency AS currency,
+                      pp.status AS status,
+                      pp.proof_file_url AS proofFileUrl,
+                      pp.proof_note AS proofNote,
+                      pp.reported_at AS reportedAt,
+                      pp.confirmed_at AS confirmedAt,
+                      pp.rejection_reason AS rejectionReason,
+                      pp.created_at AS createdAt
+                    FROM pool_payments pp
+                    LEFT JOIN users u ON u.id = pp.user_id
+                    LEFT JOIN pool_members pm ON pm.pool_id = pp.pool_id AND pm.user_id = pp.user_id
+                    WHERE pp.pool_id = ?
+                    ORDER BY pp.created_at DESC
+                    ''',
+                    (pool_id,),
+                ).fetchall()
+            ]
+
+            scores = [
+                dict(row) for row in conn.execute(
+                    '''
+                    SELECT
+                      ps.user_id AS userId,
+                      pm.display_name AS displayName,
+                      u.email AS email,
+                      ps.total_points AS totalPoints,
+                      ps.correct_count AS correctCount,
+                      ps.rank_position AS rankPosition,
+                      ps.tied_count AS tiedCount,
+                      ps.updated_at AS updatedAt
+                    FROM pool_scores ps
+                    LEFT JOIN users u ON u.id = ps.user_id
+                    LEFT JOIN pool_members pm ON pm.pool_id = ps.pool_id AND pm.user_id = ps.user_id
+                    WHERE ps.pool_id = ?
+                    ORDER BY ps.rank_position ASC, lower(pm.display_name) ASC
+                    ''',
+                    (pool_id,),
+                ).fetchall()
+            ]
+
+            submitted_user_ids = {row['userId'] for row in submissions}
+            missing_submissions = [
+                {'userId': row['userId'], 'displayName': row['displayName'], 'email': row['email']}
+                for row in members
+                if row['userId'] not in submitted_user_ids
+            ]
+            payment_exceptions = [
+                row for row in payments
+                if row['status'] in {'pending', 'self_reported', 'rejected'}
+            ]
+
+            self._audit_admin(
+                'admin_pool_troubleshoot_detail',
+                success=True,
+                admin=admin,
+                details={
+                    'poolId': pool_id,
+                    'members': len(members),
+                    'submissions': len(submissions),
+                    'paymentExceptions': len(payment_exceptions),
+                },
+            )
+            self._json(
+                {
+                    'ok': True,
+                    'pool': dict(pool),
+                    'members': members,
+                    'invites': invites,
+                    'submissions': submissions,
+                    'payments': payments,
+                    'scores': scores,
+                    'issues': {
+                        'missingSubmissions': missing_submissions,
+                        'paymentExceptions': payment_exceptions,
+                    },
+                }
+            )
+        except Exception as error:
+            self._audit_admin(
+                'admin_pool_troubleshoot_detail',
+                success=False,
+                admin=admin,
+                details={'poolId': pool_id, 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Unable to load pool detail.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
+
+    def _put_admin_pool_payment_status(self, pool_id, body):
+        admin = self._current_admin()
+        user_id = (body.get('userId') or '').strip()
+        status = (body.get('status') or '').strip().lower()
+        rejection_reason = (body.get('rejectionReason') or '').strip()
+        valid_statuses = {'pending', 'self_reported', 'confirmed', 'rejected', 'waived'}
+        if not user_id:
+            self._json({'ok': False, 'error': 'userId is required.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if status not in valid_statuses:
+            self._json({'ok': False, 'error': 'Invalid payment status.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        conn = connect()
+        try:
+            pool = conn.execute(
+                'SELECT id, entry_fee_cents, currency FROM pools WHERE id = ?',
+                (pool_id,),
+            ).fetchone()
+            if not pool:
+                self._json({'ok': False, 'error': 'Pool not found.'}, status=HTTPStatus.NOT_FOUND)
+                return
+            member = conn.execute(
+                'SELECT 1 FROM pool_members WHERE pool_id = ? AND user_id = ?',
+                (pool_id, user_id),
+            ).fetchone()
+            if not member:
+                self._json({'ok': False, 'error': 'Member not found in pool.'}, status=HTTPStatus.NOT_FOUND)
+                return
+
+            payment = conn.execute(
+                'SELECT id, amount_cents, currency FROM pool_payments WHERE pool_id = ? AND user_id = ?',
+                (pool_id, user_id),
+            ).fetchone()
+            now = time.strftime('%Y-%m-%d %H:%M:%S')
+            if payment:
+                conn.execute(
+                    '''
+                    UPDATE pool_payments
+                    SET
+                      status = ?,
+                      rejection_reason = ?,
+                      confirmed_at = CASE WHEN ? IN ('confirmed', 'waived') THEN ? ELSE NULL END
+                    WHERE pool_id = ? AND user_id = ?
+                    ''',
+                    (status, rejection_reason, status, now, pool_id, user_id),
+                )
+            else:
+                payment_id = secrets.token_hex(16)
+                amount = pool['entry_fee_cents'] if pool['entry_fee_cents'] is not None else 0
+                currency = (pool['currency'] or 'USD').upper()
+                conn.execute(
+                    '''
+                    INSERT INTO pool_payments(
+                      id, pool_id, user_id, amount_cents, currency, status, rejection_reason, confirmed_at
+                    )
+                    VALUES(?, ?, ?, ?, ?, ?, ?, CASE WHEN ? IN ('confirmed', 'waived') THEN ? ELSE NULL END)
+                    ''',
+                    (payment_id, pool_id, user_id, amount, currency, status, rejection_reason, status, now),
+                )
+
+            recompute_pool_scores(conn, pool_id)
+            self._audit_admin(
+                'admin_pool_payment_update',
+                success=True,
+                admin=admin,
+                details={'poolId': pool_id, 'userId': user_id, 'status': status},
+            )
+            self._json({'ok': True})
+        except Exception as error:
+            self._audit_admin(
+                'admin_pool_payment_update',
+                success=False,
+                admin=admin,
+                details={'poolId': pool_id, 'userId': user_id, 'status': status, 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Unable to update payment status.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
+
+    def _post_admin_pool_recompute_scores(self, pool_id):
+        admin = self._current_admin()
+        conn = connect()
+        try:
+            exists = conn.execute('SELECT 1 FROM pools WHERE id = ?', (pool_id,)).fetchone()
+            if not exists:
+                self._json({'ok': False, 'error': 'Pool not found.'}, status=HTTPStatus.NOT_FOUND)
+                return
+            recompute_pool_scores(conn, pool_id)
+            self._audit_admin(
+                'admin_pool_recompute_scores',
+                success=True,
+                admin=admin,
+                details={'poolId': pool_id},
+            )
+            self._json({'ok': True})
+        except Exception as error:
+            self._audit_admin(
+                'admin_pool_recompute_scores',
+                success=False,
+                admin=admin,
+                details={'poolId': pool_id, 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Unable to recompute pool scores.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
+
     def _get_admin_dashboard(self, year):
         admin = self._current_admin()
         conn = connect()
@@ -848,6 +2218,121 @@ class OscarHandler(SimpleHTTPRequestHandler):
         }
         self._audit_admin('admin_dashboard_view', success=True, admin=admin, details={'year': year})
         self._json(payload)
+
+    def _get_admin_odds_status(self, year):
+        admin = self._current_admin()
+        conn = connect()
+        try:
+            payload = get_odds_status(conn, int(year))
+            self._audit_admin(
+                'admin_odds_status_view',
+                success=True,
+                admin=admin,
+                details={'year': int(year)},
+            )
+            self._json({'ok': True, **payload})
+        except Exception as error:
+            self._audit_admin(
+                'admin_odds_status_view',
+                success=False,
+                admin=admin,
+                details={'year': int(year), 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Unable to load odds status.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
+
+    def _post_admin_odds_sync(self, body):
+        admin = self._current_admin()
+        year_raw = body.get('year')
+        source = str(body.get('source') or 'external_api').strip().lower()
+        rows = body.get('rows')
+        try:
+            year = int(year_raw) if year_raw not in (None, '') else 2026
+        except (TypeError, ValueError):
+            self._json({'ok': False, 'error': 'Invalid year.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        conn = connect()
+        try:
+            if isinstance(rows, list):
+                result = sync_external_odds(conn, year=year, rows=rows, source=source)
+            else:
+                result = {
+                    'ok': False,
+                    'year': year,
+                    'error': 'No external odds provider is configured. Provide structured rows or use manual import.',
+                }
+            self._audit_admin(
+                'admin_odds_sync',
+                success=bool(result.get('ok')),
+                admin=admin,
+                details={
+                    'year': year,
+                    'source': source,
+                    'status': result.get('status'),
+                    'mappedCount': result.get('mappedCount', 0),
+                    'unmappedCount': result.get('unmappedCount', 0),
+                    'error': result.get('error', ''),
+                },
+            )
+            status = HTTPStatus.OK if result.get('ok') else HTTPStatus.BAD_GATEWAY
+            self._json(result, status=status)
+        except Exception as error:
+            self._audit_admin(
+                'admin_odds_sync',
+                success=False,
+                admin=admin,
+                details={'year': year, 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Odds sync failed.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
+
+    def _post_admin_odds_import(self, body):
+        admin = self._current_admin()
+        year_raw = body.get('year')
+        text = body.get('text')
+        try:
+            year = int(year_raw) if year_raw not in (None, '') else 2026
+        except (TypeError, ValueError):
+            self._json({'ok': False, 'error': 'Invalid year.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if not isinstance(text, str) or not text.strip():
+            self._json({'ok': False, 'error': 'Missing import text.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        if len(text) > 500000:
+            self._json({'ok': False, 'error': 'Import text too large.'}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        conn = connect()
+        try:
+            result = import_manual_odds(conn, year=year, text=text)
+            self._audit_admin(
+                'admin_odds_import',
+                success=bool(result.get('ok')),
+                admin=admin,
+                details={
+                    'year': year,
+                    'status': result.get('status'),
+                    'rawCount': result.get('rawCount', 0),
+                    'mappedCount': result.get('mappedCount', 0),
+                    'unmappedCount': result.get('unmappedCount', 0),
+                    'error': result.get('error', ''),
+                },
+            )
+            status = HTTPStatus.OK if result.get('ok') else HTTPStatus.BAD_REQUEST
+            self._json(result, status=status)
+        except Exception as error:
+            self._audit_admin(
+                'admin_odds_import',
+                success=False,
+                admin=admin,
+                details={'year': year, 'error': str(error)},
+            )
+            self._json({'ok': False, 'error': 'Odds import failed.'}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        finally:
+            conn.close()
 
     def _get_admin_audit_logs(self, query):
         admin = self._current_admin()
