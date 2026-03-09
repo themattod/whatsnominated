@@ -54,7 +54,11 @@ const state = {
     rankedUserCount: 0,
     tiedUserCount: 1
   },
-  category: DEFAULT_CATEGORY,
+  category: ALL_CATEGORIES,
+  categoryFilters: [],
+  groupAllCategories: false,
+  seenOnlyFilter: false,
+  unseenOnlyFilter: false,
   sort: 'title',
   banner: {
     enabled: true,
@@ -84,6 +88,10 @@ const saveUserPrefs = () => {
     JSON.stringify({
       year: state.year,
       category: state.category,
+      categoryFilters: state.categoryFilters,
+      groupAllCategories: state.groupAllCategories,
+      seenOnlyFilter: state.seenOnlyFilter,
+      unseenOnlyFilter: state.unseenOnlyFilter,
       sort: state.sort
     })
   );
@@ -96,11 +104,27 @@ if (typeof userPrefs.year === 'number') {
 if (typeof userPrefs.category === 'string') {
   state.category = userPrefs.category;
 }
+if (Array.isArray(userPrefs.categoryFilters)) {
+  state.categoryFilters = userPrefs.categoryFilters.filter((value) => typeof value === 'string');
+}
+if (typeof userPrefs.groupAllCategories === 'boolean') {
+  state.groupAllCategories = userPrefs.groupAllCategories;
+}
+if (typeof userPrefs.seenOnlyFilter === 'boolean') {
+  state.seenOnlyFilter = userPrefs.seenOnlyFilter;
+}
+if (typeof userPrefs.unseenOnlyFilter === 'boolean') {
+  state.unseenOnlyFilter = userPrefs.unseenOnlyFilter;
+}
 if (userPrefs.sort === 'title' || userPrefs.sort === 'nominations') {
   state.sort = userPrefs.sort;
 }
-if (state.category === ALL_CATEGORIES) {
-  state.category = DEFAULT_CATEGORY;
+if (!Array.isArray(userPrefs.categoryFilters) && typeof userPrefs.category === 'string') {
+  if (userPrefs.category !== ALL_CATEGORIES) {
+    state.categoryFilters = [userPrefs.category];
+  } else {
+    state.categoryFilters = [];
+  }
 }
 
 const localPickKey = (year, userKey) => `oscars:picks:${year}:${userKey}`;
@@ -127,7 +151,9 @@ const saveLocalPicks = (picksByCategory) => {
 
 const yearSelect = document.getElementById('yearSelect');
 const yearControlLabel = document.getElementById('yearControl');
-const categorySelect = document.getElementById('categorySelect');
+const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
+const categoryFilterSummary = document.getElementById('categoryFilterSummary');
+const categoryFilterOptions = document.getElementById('categoryFilterOptions');
 const sortSelect = document.getElementById('sortSelect');
 const sortWrap = document.getElementById('sortWrap');
 const stats = document.getElementById('stats');
@@ -211,7 +237,7 @@ const loadYears = async () => {
 
 const loadNominees = async () => {
   const payload = await api(
-    `/api/nominees?year=${state.year}&category=${encodeURIComponent(state.category)}`
+    `/api/nominees?year=${state.year}&category=${encodeURIComponent(ALL_CATEGORIES)}`
   );
   state.categories = payload.categories;
   state.films = payload.films;
@@ -254,48 +280,184 @@ const buildYearOptions = () => {
   sizeSelectToOptions(yearSelect);
 };
 
-const buildCategoryOptions = () => {
-  categorySelect.innerHTML = '';
-  const presentByName = new Map(state.categories.map((category) => [category.name, category]));
-  const ordered = [];
-  for (const name of CATEGORY_VIEW_ORDER) {
-    if (presentByName.has(name)) {
-      ordered.push(presentByName.get(name));
-      presentByName.delete(name);
-    }
-  }
-  ordered.push(...presentByName.values());
-
-  for (const category of ordered) {
-    const option = document.createElement('option');
-    option.value = category.name;
-    option.textContent = category.name;
-    categorySelect.append(option);
-  }
-
-  const all = document.createElement('option');
-  all.value = ALL_CATEGORIES;
-  all.textContent = 'All films';
-  categorySelect.append(all);
-
-  const hasCategory =
-    state.category === ALL_CATEGORIES || state.categories.some((c) => c.name === state.category);
-  if (!hasCategory) {
-    state.category = state.categories.some((c) => c.name === DEFAULT_CATEGORY)
-      ? DEFAULT_CATEGORY
-      : (state.categories[0]?.name || ALL_CATEGORIES);
-  }
-  categorySelect.value = state.category;
-  sizeSelectToOptions(categorySelect);
+const selectedCategories = () => {
+  const categorySet = new Set(state.categories.map((category) => category.name));
+  return state.categoryFilters.filter((name) => categorySet.has(name));
 };
 
-const renderStats = () => {
-  const seenCount = state.films.filter((film) => state.seenFilmIds.has(film.id)).length;
-  if (state.category === ALL_CATEGORIES) {
-    stats.textContent = `You have seen ${seenCount} of ${state.films.length} nominated films`;
+const updateCategoryFilterSummary = () => {
+  const selected = selectedCategories();
+  const parts = [];
+  if (state.seenOnlyFilter && !state.unseenOnlyFilter) {
+    parts.push('Seen');
+  } else if (state.unseenOnlyFilter && !state.seenOnlyFilter) {
+    parts.push('Unseen');
+  } else if (state.seenOnlyFilter && state.unseenOnlyFilter) {
+    parts.push('Seen + Unseen');
+  }
+  if (state.groupAllCategories) {
+    parts.push('All categories');
+  } else if (selected.length === 0) {
+    parts.push('All films');
+  } else if (selected.length === 1) {
+    parts.push(selected[0]);
+  } else {
+    parts.push(`${selected.length} categories`);
+  }
+  categoryFilterSummary.textContent = parts.join(' • ');
+};
+
+const buildCategoryOptions = () => {
+  categoryFilterOptions.innerHTML = '';
+  const ordered = [...state.categories].sort((a, b) => a.name.localeCompare(b.name));
+
+  state.categoryFilters = selectedCategories();
+
+  const addOption = (value, text, checked) => {
+    const label = document.createElement('label');
+    label.className = 'category-filter-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = value;
+    input.checked = checked;
+    input.dataset.filterType = value === '__SEEN__' || value === '__UNSEEN__' ? 'state' : 'category';
+    const span = document.createElement('span');
+    span.textContent = text;
+    label.append(input, span);
+    categoryFilterOptions.append(label);
+  };
+
+  addOption('__SEEN__', 'Seen', state.seenOnlyFilter);
+  addOption('__UNSEEN__', 'Unseen', state.unseenOnlyFilter);
+  addOption('__GROUP_ALL__', 'All Categories', state.groupAllCategories);
+
+  const divider = document.createElement('div');
+  divider.className = 'category-filter-divider';
+  categoryFilterOptions.append(divider);
+
+  const selectedSet = new Set(state.categoryFilters);
+  for (const category of ordered) {
+    addOption(category.name, category.name, selectedSet.has(category.name));
+  }
+  updateCategoryFilterSummary();
+};
+
+const categoryOrderIndex = new Map(CATEGORY_VIEW_ORDER.map((name, idx) => [name, idx]));
+
+const compareFilms = (nominationCounts) => (a, b) => {
+  if (state.sort === 'nominations') {
+    const countA = nominationCounts.get(a.id) || 0;
+    const countB = nominationCounts.get(b.id) || 0;
+    if (countB !== countA) {
+      return countB - countA;
+    }
+  }
+  return a.title.localeCompare(b.title);
+};
+
+const passesSeenFilters = (filmId) => {
+  const seen = state.seenFilmIds.has(filmId);
+  if (state.seenOnlyFilter && !state.unseenOnlyFilter) {
+    return seen;
+  }
+  if (state.unseenOnlyFilter && !state.seenOnlyFilter) {
+    return !seen;
+  }
+  return true;
+};
+
+const categoryNominationCounts = () => {
+  const byCategory = new Map();
+  for (const nomination of state.nominations) {
+    const map = byCategory.get(nomination.category) || new Map();
+    map.set(nomination.filmId, (map.get(nomination.filmId) || 0) + 1);
+    byCategory.set(nomination.category, map);
+  }
+  return byCategory;
+};
+
+const selectedCategoriesInOrder = () => {
+  if (state.groupAllCategories) {
+    return state.categories
+      .map((category) => category.name)
+      .sort((a, b) => {
+        const ai = categoryOrderIndex.has(a) ? categoryOrderIndex.get(a) : Number.MAX_SAFE_INTEGER;
+        const bi = categoryOrderIndex.has(b) ? categoryOrderIndex.get(b) : Number.MAX_SAFE_INTEGER;
+        if (ai !== bi) {
+          return ai - bi;
+        }
+        return a.localeCompare(b);
+      });
+  }
+  const selected = selectedCategories();
+  if (!selected.length) {
+    return [];
+  }
+  return [...selected].sort((a, b) => {
+    const ai = categoryOrderIndex.has(a) ? categoryOrderIndex.get(a) : Number.MAX_SAFE_INTEGER;
+    const bi = categoryOrderIndex.has(b) ? categoryOrderIndex.get(b) : Number.MAX_SAFE_INTEGER;
+    if (ai !== bi) {
+      return ai - bi;
+    }
+    return a.localeCompare(b);
+  });
+};
+
+const buildDisplayGroups = () => {
+  const selected = selectedCategoriesInOrder();
+  const allCounts = new Map();
+  for (const nomination of state.nominations) {
+    allCounts.set(nomination.filmId, (allCounts.get(nomination.filmId) || 0) + 1);
+  }
+
+  if (!selected.length) {
+    const rows = state.films
+      .filter((film) => passesSeenFilters(film.id))
+      .sort(compareFilms(allCounts))
+      .map((film) => ({ film, contextCategory: '' }));
+    return [{ category: '', rows }];
+  }
+
+  const countsByCategory = categoryNominationCounts();
+  const groups = [];
+  for (const category of selected) {
+    const nominatedRows = state.nominations.filter((n) => n.category === category);
+    const filmIds = unique(nominatedRows.map((n) => n.filmId));
+    const counts = countsByCategory.get(category) || new Map();
+    const rows = filmIds
+      .map((filmId) => state.films.find((film) => film.id === filmId))
+      .filter(Boolean)
+      .filter((film) => passesSeenFilters(film.id))
+      .sort(compareFilms(counts))
+      .map((film) => ({ film, contextCategory: category }));
+    groups.push({ category, rows });
+  }
+  return groups;
+};
+
+const renderStats = (groups) => {
+  const selected = selectedCategoriesInOrder();
+  const uniqueFilmIds = new Set();
+  const uniqueSeenFilmIds = new Set();
+  for (const group of groups) {
+    for (const row of group.rows) {
+      uniqueFilmIds.add(row.film.id);
+      if (state.seenFilmIds.has(row.film.id)) {
+        uniqueSeenFilmIds.add(row.film.id);
+      }
+    }
+  }
+  const rowCount = uniqueFilmIds.size;
+  const seenCount = uniqueSeenFilmIds.size;
+  if (selected.length === 1 && !state.seenOnlyFilter && !state.unseenOnlyFilter) {
+    stats.textContent = `You have seen ${seenCount} of ${rowCount} ${selected[0]} nominees`;
     return;
   }
-  stats.textContent = `You have seen ${seenCount} of ${state.films.length} ${state.category} nominees`;
+  if (!state.groupAllCategories && selected.length === 0 && !state.seenOnlyFilter && !state.unseenOnlyFilter) {
+    stats.textContent = `You have seen ${seenCount} of ${rowCount} nominated films`;
+    return;
+  }
+  stats.textContent = `You have seen ${seenCount} of ${rowCount} films in this view`;
 };
 
 const renderProgress = () => {
@@ -345,39 +507,32 @@ const renderProgress = () => {
   compareProgressFill.style.width = `${Math.max(0, Math.min(100, normalizedRank))}%`;
 };
 
-const sortedFilms = () => {
-  const nominationCounts = new Map();
-  for (const nomination of state.nominations) {
-    nominationCounts.set(nomination.filmId, (nominationCounts.get(nomination.filmId) || 0) + 1);
-  }
-
-  const films = [...state.films];
-  if (state.sort === 'nominations') {
-    films.sort((a, b) => {
-      const countA = nominationCounts.get(a.id) || 0;
-      const countB = nominationCounts.get(b.id) || 0;
-      if (countB !== countA) {
-        return countB - countA;
-      }
-      return a.title.localeCompare(b.title);
-    });
-  } else {
-    films.sort((a, b) => a.title.localeCompare(b.title));
-  }
-
-  return films;
-};
-
 const renderFilms = () => {
   sortWrap.hidden = false;
   sortSelect.value = state.sort;
   sizeSelectToOptions(sortSelect);
 
-  renderStats();
+  const groups = buildDisplayGroups();
+  renderStats(groups);
   renderProgress();
   filmList.innerHTML = '';
 
-  for (const film of sortedFilms()) {
+  const selected = selectedCategoriesInOrder();
+  const multiCategoryMode = selected.length > 1;
+  for (const group of groups) {
+    if (group.rows.length === 0) {
+      continue;
+    }
+    if (multiCategoryMode) {
+      const header = document.createElement('h3');
+      header.className = 'film-group-header';
+      header.textContent = group.category;
+      filmList.append(header);
+    }
+
+    for (const row of group.rows) {
+      const film = row.film;
+      const contextCategory = row.contextCategory;
     const card = cardTemplate.content.firstElementChild.cloneNode(true);
     const nominatedIn = state.nominations.filter((n) => n.filmId === film.id);
     const categoryNames = unique(nominatedIn.map((n) => n.category));
@@ -392,8 +547,9 @@ const renderFilms = () => {
     const pickButton = card.querySelector('.pick-button');
     const pickHint = card.querySelector('.pick-hint');
     const winnerLabel = card.querySelector('.winner-label');
-    if (state.category !== ALL_CATEGORIES) {
-      const category = state.category;
+    const singleCategory = contextCategory || '';
+    if (singleCategory) {
+      const category = singleCategory;
       const pickedFilmId = state.picksByCategory?.[category];
       const winnerFilmId = state.winnersByCategory?.[category];
       const locked = Boolean(state.votingLocked);
@@ -444,11 +600,11 @@ const renderFilms = () => {
     card.querySelector('.film-title').textContent = film.title;
 
     const meta = card.querySelector('.film-meta');
-    if (state.category === ALL_CATEGORIES) {
+    if (!singleCategory) {
       meta.textContent = `${categoryNames.length} Nomination${categoryNames.length === 1 ? '' : 's'}`;
     } else {
       const nominees = nominatedIn
-        .filter((n) => n.category === state.category)
+        .filter((n) => n.category === singleCategory)
         .map((n) => n.nominee)
         .filter(Boolean);
       meta.textContent = nominees.length
@@ -485,7 +641,8 @@ const renderFilms = () => {
     wrapper.append(dt, dd);
     availabilityList.append(wrapper);
 
-    filmList.append(card);
+      filmList.append(card);
+    }
   }
 };
 
@@ -534,13 +691,11 @@ const updatePick = async (category, filmId, picked) => {
 const wireEvents = () => {
   yearSelect.addEventListener('change', async (event) => {
     state.year = Number(event.target.value);
-    state.category = DEFAULT_CATEGORY;
-    saveUserPrefs();
-    await refresh();
-  });
-
-  categorySelect.addEventListener('change', async (event) => {
-    state.category = event.target.value;
+    state.category = ALL_CATEGORIES;
+    state.categoryFilters = [];
+    state.groupAllCategories = false;
+    state.seenOnlyFilter = false;
+    state.unseenOnlyFilter = false;
     saveUserPrefs();
     await refresh();
   });
@@ -609,10 +764,55 @@ const wireEvents = () => {
 
     const nextCategory = link.dataset.category;
     state.category = nextCategory;
-    categorySelect.value = nextCategory;
+    state.categoryFilters = [nextCategory];
+    state.groupAllCategories = false;
+    state.seenOnlyFilter = false;
+    state.unseenOnlyFilter = false;
+    buildCategoryOptions();
     saveUserPrefs();
-    refresh();
+    renderFilms();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  categoryFilterOptions.addEventListener('change', (event) => {
+    const input = event.target.closest('input[type="checkbox"]');
+    if (!input) {
+      return;
+    }
+    if (input.value === '__SEEN__') {
+      state.seenOnlyFilter = input.checked;
+    } else if (input.value === '__UNSEEN__') {
+      state.unseenOnlyFilter = input.checked;
+    } else if (input.value === '__GROUP_ALL__') {
+      state.groupAllCategories = input.checked;
+      if (input.checked) {
+        state.categoryFilters = [];
+      }
+    } else {
+      if (state.groupAllCategories && input.checked) {
+        state.groupAllCategories = false;
+      }
+      const next = new Set(selectedCategories());
+      if (input.checked) {
+        next.add(input.value);
+      } else {
+        next.delete(input.value);
+      }
+      state.categoryFilters = [...next];
+    }
+    buildCategoryOptions();
+    saveUserPrefs();
+    renderFilms();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!categoryFilterDropdown.open) {
+      return;
+    }
+    if (categoryFilterDropdown.contains(event.target)) {
+      return;
+    }
+    categoryFilterDropdown.open = false;
   });
 
   window.addEventListener('storage', async (event) => {

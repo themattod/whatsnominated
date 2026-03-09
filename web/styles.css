@@ -786,9 +786,99 @@ body {
   justify-content: start;
 }
 
+#categoryFilterWrap {
+  min-width: 15rem;
+}
+
+.category-filter-dropdown {
+  position: relative;
+}
+
+.category-filter-dropdown > summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid #cfc7b2;
+  border-radius: 0.55rem;
+  padding: 0.52rem 0.6rem;
+  padding-right: 1.9rem;
+  font: inherit;
+  color: var(--ink);
+  background: linear-gradient(160deg, #ffffff, #f7f4eb);
+  min-width: 15rem;
+}
+
+.category-filter-dropdown > summary::-webkit-details-marker {
+  display: none;
+}
+
+.category-filter-dropdown > summary::after {
+  content: '▾';
+  position: absolute;
+  right: 0.62rem;
+  top: 0.55rem;
+  font-size: 0.75rem;
+  color: #4d4d55;
+}
+
+.category-filter-dropdown[open] > summary::after {
+  content: '▴';
+}
+
+.category-filter-options {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  min-width: 18.5rem;
+  max-height: 18rem;
+  overflow: auto;
+  z-index: 50;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: linear-gradient(160deg, #ffffff, #f7f4eb);
+  box-shadow: 0 10px 24px rgba(20, 16, 6, 0.17);
+  padding: 0.45rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.category-filter-option {
+  display: flex !important;
+  align-items: center;
+  gap: 0.48rem;
+  font-size: 0.9rem !important;
+  color: #2f2f35;
+  cursor: pointer;
+}
+
+.category-filter-option input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.category-filter-divider {
+  height: 1px;
+  background: #e3dbc7;
+  margin: 0.2rem 0 0.3rem;
+}
+
 @media (max-width: 640px) {
   .browse-grid {
     grid-template-columns: 1fr;
+  }
+
+  #categoryFilterWrap {
+    min-width: 0;
+  }
+
+  .category-filter-dropdown > summary {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .category-filter-options {
+    min-width: 100%;
+    max-width: calc(100vw - 4.2rem);
   }
 }
 
@@ -1068,6 +1158,16 @@ select {
   grid-template-columns: 1fr;
   gap: 0.9rem;
   margin-top: 1rem;
+}
+
+.film-group-header {
+  margin: 0.1rem 0 -0.1rem;
+  font-family: 'Futura PT', 'Futura', 'Avenir Next', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #3a3528;
 }
 
 .film-card {

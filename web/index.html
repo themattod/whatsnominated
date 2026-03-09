@@ -66,9 +66,12 @@
               <select id="yearSelect"></select>
             </label>
 
-            <label>
+            <label id="categoryFilterWrap">
               Category View
-              <select id="categorySelect"></select>
+              <details id="categoryFilterDropdown" class="category-filter-dropdown">
+                <summary id="categoryFilterSummary">All films</summary>
+                <div id="categoryFilterOptions" class="category-filter-options"></div>
+              </details>
             </label>
 
             <label id="sortWrap">
