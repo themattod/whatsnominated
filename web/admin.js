@@ -23,14 +23,8 @@ const state = {
     winnerCategories: 0
   },
   csrfToken: '',
-  ballotJumpCategory: '',
-  poolTroubleshoot: {
-    poolId: '',
-    userEmail: '',
-    results: [],
-    selectedPoolId: '',
-    detail: null
-  }
+  category: ALL_CATEGORIES,
+  sort: 'title'
 };
 
 const loadAdminPrefs = () => {
@@ -51,7 +45,8 @@ const saveAdminPrefs = () => {
     ADMIN_PREFS_KEY,
     JSON.stringify({
       year: state.year,
-      ballotJumpCategory: state.ballotJumpCategory
+      category: state.category,
+      sort: state.sort
     })
   );
 };
@@ -60,16 +55,21 @@ const adminPrefs = loadAdminPrefs();
 if (typeof adminPrefs.year === 'number') {
   state.year = adminPrefs.year;
 }
-if (typeof adminPrefs.ballotJumpCategory === 'string') {
-  state.ballotJumpCategory = adminPrefs.ballotJumpCategory;
+if (typeof adminPrefs.category === 'string') {
+  state.category = adminPrefs.category;
+}
+if (adminPrefs.sort === 'title' || adminPrefs.sort === 'nominations') {
+  state.sort = adminPrefs.sort;
 }
 
 const yearSelect = document.getElementById('yearSelect');
 const yearControlLabel = document.getElementById('yearControl');
-const ballotJumpSelect = document.getElementById('ballotJumpSelect');
+const categorySelect = document.getElementById('categorySelect');
+const sortSelect = document.getElementById('sortSelect');
+const sortWrap = document.getElementById('sortWrap');
 const stats = document.getElementById('stats');
 const filmList = document.getElementById('filmList');
-const adminFormTemplate = document.getElementById('adminFormTemplate');
+const cardTemplate = document.getElementById('filmCardTemplate');
 const bannerForm = document.getElementById('bannerForm');
 const bannerEnabledButton = document.getElementById('bannerEnabledButton');
 const bannerText = document.getElementById('bannerText');
@@ -80,15 +80,8 @@ const dashTotalPicks = document.getElementById('dashTotalPicks');
 const dashWinnerCategories = document.getElementById('dashWinnerCategories');
 const eventModeHeaderButton = document.getElementById('eventModeHeaderButton');
 const votingLockHeaderButton = document.getElementById('votingLockHeaderButton');
-const clearWinnersButton = document.getElementById('clearWinnersButton');
 const eventModeSaveStatus = document.getElementById('eventModeSaveStatus');
 const adminLogoutButton = document.getElementById('adminLogoutButton');
-const poolTroubleshootForm = document.getElementById('poolTroubleshootForm');
-const poolTroubleshootPoolId = document.getElementById('poolTroubleshootPoolId');
-const poolTroubleshootUserEmail = document.getElementById('poolTroubleshootUserEmail');
-const poolTroubleshootReset = document.getElementById('poolTroubleshootReset');
-const poolTroubleshootStatus = document.getElementById('poolTroubleshootStatus');
-const poolTroubleshootResults = document.getElementById('poolTroubleshootResults');
 let bannerSaveStatusTimer = null;
 let eventModeSaveStatusTimer = null;
 
@@ -149,11 +142,20 @@ const getAdminSession = async () => {
 };
 
 const unique = (items) => [...new Set(items)];
-const slugify = (value) =>
-  String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+const resolveWatchUrl = (film) => {
+  const url = (film.whereToWatchUrl || '').trim();
+  if (!url) {
+    return '';
+  }
+  const lower = url.toLowerCase();
+  if (lower.includes('justwatch.com') && (lower.includes('/search') || lower.includes('?q='))) {
+    return '';
+  }
+  return url;
+};
+const posterProxyUrl = (filmId) =>
+  `/api/poster-image?year=${encodeURIComponent(String(state.year))}&filmId=${encodeURIComponent(filmId)}`;
+const resolvePosterUrl = (film) => posterProxyUrl(film.id);
 
 const sizeSelectToOptions = (selectEl) => {
   const longest = Math.max(...[...selectEl.options].map((o) => o.textContent.length), 1);
@@ -171,7 +173,7 @@ const loadYears = async () => {
 
 const loadNominees = async () => {
   const payload = await api(
-    `/api/nominees?year=${state.year}&category=${encodeURIComponent(ALL_CATEGORIES)}`
+    `/api/nominees?year=${state.year}&category=${encodeURIComponent(state.category)}`
   );
   state.categories = payload.categories;
   state.films = payload.films;
@@ -205,45 +207,6 @@ const loadDashboardSafe = async () => {
   }
 };
 
-const loadPoolTroubleshootSearch = async () => {
-  const query = new URLSearchParams();
-  if (state.poolTroubleshoot.poolId) {
-    query.set('poolId', state.poolTroubleshoot.poolId);
-  }
-  if (state.poolTroubleshoot.userEmail) {
-    query.set('userEmail', state.poolTroubleshoot.userEmail);
-  }
-  query.set('year', String(state.year));
-  query.set('limit', '50');
-  const payload = await api(`/api/admin/pools/troubleshoot?${query.toString()}`);
-  state.poolTroubleshoot.results = Array.isArray(payload.pools) ? payload.pools : [];
-  if (
-    state.poolTroubleshoot.selectedPoolId &&
-    !state.poolTroubleshoot.results.some((row) => row.poolId === state.poolTroubleshoot.selectedPoolId)
-  ) {
-    state.poolTroubleshoot.selectedPoolId = '';
-    state.poolTroubleshoot.detail = null;
-  }
-};
-
-const loadPoolTroubleshootDetail = async (poolId) => {
-  const payload = await api(`/api/admin/pools/${encodeURIComponent(poolId)}/troubleshoot`);
-  state.poolTroubleshoot.selectedPoolId = poolId;
-  state.poolTroubleshoot.detail = payload;
-};
-
-const updatePoolPaymentStatus = async (poolId, userId, status, rejectionReason = '') => {
-  await api(`/api/admin/pools/${encodeURIComponent(poolId)}/payments`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, status, rejectionReason })
-  });
-};
-
-const recomputePoolScores = async (poolId) => {
-  await api(`/api/admin/pools/${encodeURIComponent(poolId)}/recompute-scores`, { method: 'POST' });
-};
-
 const buildYearOptions = () => {
   if (yearControlLabel) {
     yearControlLabel.style.display = state.years.length <= 1 ? 'none' : '';
@@ -259,223 +222,61 @@ const buildYearOptions = () => {
   sizeSelectToOptions(yearSelect);
 };
 
-const alphabeticalCategoryNames = () =>
-  state.categories
-    .map((category) => category.name)
-    .sort((a, b) => a.localeCompare(b));
+const buildCategoryOptions = () => {
+  categorySelect.innerHTML = '';
+  const all = document.createElement('option');
+  all.value = ALL_CATEGORIES;
+  all.textContent = 'All films';
+  categorySelect.append(all);
 
-const nominationMaps = () => {
-  const nomineeByFilmAndCategory = new Map();
-  const categoryFilmIds = new Map();
-
-  for (const nomination of state.nominations) {
-    nomineeByFilmAndCategory.set(`${nomination.filmId}::${nomination.category}`, nomination.nominee || '');
-    const filmIds = categoryFilmIds.get(nomination.category) || [];
-    filmIds.push(nomination.filmId);
-    categoryFilmIds.set(nomination.category, filmIds);
-  }
-
-  return { nomineeByFilmAndCategory, categoryFilmIds };
-};
-
-const buildBallotJumpOptions = () => {
-  ballotJumpSelect.innerHTML = '';
-
-  const empty = document.createElement('option');
-  empty.value = '';
-  empty.textContent = 'Select category';
-  ballotJumpSelect.append(empty);
-
-  for (const categoryName of alphabeticalCategoryNames()) {
+  for (const category of state.categories) {
     const option = document.createElement('option');
-    option.value = categoryName;
-    option.textContent = categoryName;
-    ballotJumpSelect.append(option);
+    option.value = category.name;
+    option.textContent = category.name;
+    categorySelect.append(option);
   }
 
-  if (!alphabeticalCategoryNames().includes(state.ballotJumpCategory)) {
-    state.ballotJumpCategory = '';
+  const hasCategory =
+    state.category === ALL_CATEGORIES || state.categories.some((c) => c.name === state.category);
+  if (!hasCategory) {
+    state.category = ALL_CATEGORIES;
   }
-  ballotJumpSelect.value = state.ballotJumpCategory;
-  sizeSelectToOptions(ballotJumpSelect);
-};
-
-const fmtDateTime = (value) => (value ? String(value).replace('T', ' ') : '');
-const fmtCents = (value, currency = 'USD') => {
-  const amount = Number(value || 0);
-  return `${(amount / 100).toFixed(2)} ${String(currency || 'USD').toUpperCase()}`;
-};
-
-const renderPoolTroubleshoot = () => {
-  if (!poolTroubleshootResults) {
-    return;
-  }
-  poolTroubleshootResults.innerHTML = '';
-  const rows = state.poolTroubleshoot.results || [];
-  if (rows.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'pools-empty';
-    empty.textContent = 'No pools found for the current filter.';
-    poolTroubleshootResults.append(empty);
-    return;
-  }
-
-  const list = document.createElement('div');
-  list.className = 'pool-troubleshoot-results';
-
-  for (const row of rows) {
-    const card = document.createElement('article');
-    card.className = 'pool-troubleshoot-card';
-    card.dataset.poolId = row.poolId;
-
-    const top = document.createElement('div');
-    top.className = 'pool-troubleshoot-top';
-    const title = document.createElement('h4');
-    title.textContent = `${row.name || 'Untitled Pool'} (${row.poolId})`;
-    const meta = document.createElement('p');
-    meta.className = 'small-note';
-    meta.textContent = `Year ${row.year} • Owner ${row.ownerEmail || 'unknown'} • Members ${row.memberCount || 0} • Submissions ${row.submissionCount || 0} • Payment Exceptions ${row.paymentExceptionCount || 0}`;
-    top.append(title, meta);
-
-    const actions = document.createElement('div');
-    actions.className = 'pool-troubleshoot-actions';
-    const inspectBtn = document.createElement('button');
-    inspectBtn.type = 'button';
-    inspectBtn.dataset.action = 'pool-troubleshoot-inspect';
-    inspectBtn.dataset.poolId = row.poolId;
-    inspectBtn.textContent =
-      state.poolTroubleshoot.selectedPoolId === row.poolId ? 'Refresh Detail' : 'Inspect';
-    const recomputeBtn = document.createElement('button');
-    recomputeBtn.type = 'button';
-    recomputeBtn.dataset.action = 'pool-troubleshoot-recompute';
-    recomputeBtn.dataset.poolId = row.poolId;
-    recomputeBtn.textContent = 'Recompute Scores';
-    actions.append(inspectBtn, recomputeBtn);
-
-    card.append(top, actions);
-
-    if (
-      state.poolTroubleshoot.selectedPoolId === row.poolId &&
-      state.poolTroubleshoot.detail &&
-      state.poolTroubleshoot.detail.pool
-    ) {
-      const detail = state.poolTroubleshoot.detail;
-      const detailWrap = document.createElement('div');
-      detailWrap.className = 'pool-troubleshoot-detail';
-
-      const summary = document.createElement('p');
-      summary.className = 'small-note';
-      summary.textContent = `Mode ${detail.pool.scoringMode || 'standard'} • Entry ${detail.pool.entryMode || 'free'} • Payment required ${detail.pool.paymentRequiredToScore ? 'Yes' : 'No'} • Updated ${fmtDateTime(detail.pool.updatedAt)}`;
-      detailWrap.append(summary);
-
-      const issues = document.createElement('div');
-      issues.className = 'pool-troubleshoot-issues';
-      const missing = (detail.issues?.missingSubmissions || []).length;
-      const exceptions = (detail.issues?.paymentExceptions || []).length;
-      issues.textContent = `Issues: ${missing} missing submission(s), ${exceptions} payment exception(s).`;
-      detailWrap.append(issues);
-
-      const paymentsTitle = document.createElement('h5');
-      paymentsTitle.textContent = 'Payments';
-      detailWrap.append(paymentsTitle);
-
-      const payments = detail.payments || [];
-      if (payments.length === 0) {
-        const none = document.createElement('p');
-        none.className = 'small-note';
-        none.textContent = 'No payment records.';
-        detailWrap.append(none);
-      } else {
-        const tableWrap = document.createElement('div');
-        tableWrap.className = 'audit-table-wrap';
-        const table = document.createElement('table');
-        table.className = 'audit-table';
-        const thead = document.createElement('thead');
-        thead.innerHTML =
-          '<tr><th>Member</th><th>Amount</th><th>Status</th><th>Reported</th><th>Update</th></tr>';
-        const tbody = document.createElement('tbody');
-        for (const payment of payments) {
-          const tr = document.createElement('tr');
-          const memberTd = document.createElement('td');
-          memberTd.textContent = `${payment.displayName || payment.userId} (${payment.email || 'no email'})`;
-          const amountTd = document.createElement('td');
-          amountTd.textContent = fmtCents(payment.amountCents, payment.currency);
-          const statusTd = document.createElement('td');
-          statusTd.textContent = payment.status || '';
-          const reportedTd = document.createElement('td');
-          reportedTd.textContent = fmtDateTime(payment.reportedAt || payment.createdAt);
-          const actionTd = document.createElement('td');
-          const statusSelect = document.createElement('select');
-          statusSelect.dataset.action = 'pool-payment-status';
-          statusSelect.dataset.poolId = row.poolId;
-          statusSelect.dataset.userId = payment.userId;
-          for (const optionValue of ['pending', 'self_reported', 'confirmed', 'rejected', 'waived']) {
-            const option = document.createElement('option');
-            option.value = optionValue;
-            option.textContent = optionValue;
-            statusSelect.append(option);
-          }
-          statusSelect.value = payment.status || 'pending';
-          const applyBtn = document.createElement('button');
-          applyBtn.type = 'button';
-          applyBtn.dataset.action = 'pool-payment-apply';
-          applyBtn.dataset.poolId = row.poolId;
-          applyBtn.dataset.userId = payment.userId;
-          applyBtn.textContent = 'Apply';
-          actionTd.append(statusSelect, applyBtn);
-          tr.append(memberTd, amountTd, statusTd, reportedTd, actionTd);
-          tbody.append(tr);
-        }
-        table.append(thead, tbody);
-        tableWrap.append(table);
-        detailWrap.append(tableWrap);
-      }
-
-      const scoresTitle = document.createElement('h5');
-      scoresTitle.textContent = 'Scores';
-      detailWrap.append(scoresTitle);
-      const scoreRows = detail.scores || [];
-      if (scoreRows.length === 0) {
-        const none = document.createElement('p');
-        none.className = 'small-note';
-        none.textContent = 'No score rows.';
-        detailWrap.append(none);
-      } else {
-        const scoreList = document.createElement('div');
-        scoreList.className = 'pool-score-list';
-        for (const score of scoreRows) {
-          const line = document.createElement('p');
-          line.textContent = `#${score.rankPosition || '-'} ${score.displayName || score.userId} • ${score.totalPoints || 0} pts • ${score.correctCount || 0} correct`;
-          scoreList.append(line);
-        }
-        detailWrap.append(scoreList);
-      }
-      card.append(detailWrap);
-    }
-    list.append(card);
-  }
-  poolTroubleshootResults.append(list);
-};
-
-const jumpToCategory = (categoryName) => {
-  if (!categoryName) {
-    return;
-  }
-  const id = `admin-ballot-category-${slugify(categoryName)}`;
-  const node = document.getElementById(id);
-  if (!node) {
-    return;
-  }
-  node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  categorySelect.value = state.category;
+  sizeSelectToOptions(categorySelect);
 };
 
 const renderStats = () => {
-  const categoryCount = state.categories.length;
-  const nominationCount = state.nominations.length;
-  stats.textContent = `Managing ${nominationCount} nomination${nominationCount === 1 ? '' : 's'} across ${categoryCount} categories.`;
+  stats.textContent = `Managing ${state.films.length} film${state.films.length === 1 ? '' : 's'} in this view.`;
+};
+
+const sortedFilms = () => {
+  const nominationCounts = new Map();
+  for (const nomination of state.nominations) {
+    nominationCounts.set(nomination.filmId, (nominationCounts.get(nomination.filmId) || 0) + 1);
+  }
+
+  const films = [...state.films];
+  if (state.sort === 'nominations') {
+    films.sort((a, b) => {
+      const countA = nominationCounts.get(a.id) || 0;
+      const countB = nominationCounts.get(b.id) || 0;
+      if (countB !== countA) {
+        return countB - countA;
+      }
+      return a.title.localeCompare(b.title);
+    });
+  } else {
+    films.sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  return films;
 };
 
 const renderFilms = () => {
+  sortWrap.hidden = false;
+  sortSelect.value = state.sort;
+  sizeSelectToOptions(sortSelect);
+
   renderStats();
   const isBannerEnabled = Boolean(state.banner?.enabled);
   bannerEnabledButton.setAttribute('aria-pressed', isBannerEnabled ? 'true' : 'false');
@@ -489,116 +290,111 @@ const renderFilms = () => {
   eventModeHeaderButton.textContent = state.eventMode ? "We're Doing it Live!" : 'Enable Live Mode';
   votingLockHeaderButton.setAttribute('aria-pressed', state.votingLocked ? 'true' : 'false');
   votingLockHeaderButton.textContent = state.votingLocked ? '🔒Voting Locked' : 'Lock Voting';
-  clearWinnersButton.disabled = state.votingLocked;
-  clearWinnersButton.textContent = 'Clear Winners';
   filmList.innerHTML = '';
-  const maps = nominationMaps();
-  const filmsById = new Map(state.films.map((film) => [film.id, film]));
 
-  for (const categoryName of alphabeticalCategoryNames()) {
-    const section = document.createElement('section');
-    section.className = 'ballot-category-section';
-    section.id = `admin-ballot-category-${slugify(categoryName)}`;
+  for (const film of sortedFilms()) {
+    const card = cardTemplate.content.firstElementChild.cloneNode(true);
+    const nominatedIn = state.nominations.filter((n) => n.filmId === film.id);
+    const categoryNames = unique(nominatedIn.map((n) => n.category));
 
-    const headerMain = document.createElement('div');
-    headerMain.className = 'ballot-category-header-main';
+    const posterImage = card.querySelector('.poster-image');
+    const posterFallback = card.querySelector('.poster-fallback');
+    posterImage.src = resolvePosterUrl(film);
+    posterImage.alt = `${film.title} poster`;
+    posterImage.hidden = false;
+    posterFallback.hidden = true;
+    posterImage.onload = () => {
+      posterImage.hidden = false;
+      posterFallback.hidden = true;
+    };
+    posterImage.onerror = () => {
+      posterImage.hidden = true;
+      posterFallback.hidden = false;
+    };
 
-    const categoryMeta = document.createElement('div');
-    categoryMeta.className = 'ballot-category-meta';
-
-    const heading = document.createElement('h3');
-    heading.className = 'ballot-category-title';
-    heading.textContent = categoryName;
-
-    const winnerFilmId = state.winnersByCategory?.[categoryName];
-    const hasWinner = Boolean(winnerFilmId);
-    const status = document.createElement('span');
-    status.className = `ballot-category-status ${hasWinner ? 'picked' : 'missing'}`;
-    status.textContent = hasWinner ? 'Winner Set' : 'Winner Missing';
-
-    const winnerColumnLabel = document.createElement('span');
-    winnerColumnLabel.className = 'ballot-column-label ballot-vote-column-label';
-    winnerColumnLabel.textContent = 'Winner';
-
-    categoryMeta.append(heading, status);
-    headerMain.append(categoryMeta, winnerColumnLabel);
-    section.append(headerMain);
-
-    const filmIds = unique(maps.categoryFilmIds.get(categoryName) || []);
-    const films = filmIds
-      .map((filmId) => filmsById.get(filmId))
-      .filter(Boolean)
-      .sort((a, b) => a.title.localeCompare(b.title));
-
-    if (films.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'ballot-empty';
-      empty.textContent = 'No films in this category.';
-      section.append(empty);
-      filmList.append(section);
-      continue;
+    const winnerButton = card.querySelector('.winner-button');
+    if (state.category !== ALL_CATEGORIES) {
+      const category = state.category;
+      const winnerFilmId = state.winnersByCategory?.[category];
+      const isWinner = winnerFilmId === film.id;
+      winnerButton.hidden = false;
+      winnerButton.disabled = false;
+      winnerButton.dataset.filmId = film.id;
+      winnerButton.dataset.category = category;
+      winnerButton.setAttribute('aria-pressed', isWinner ? 'true' : 'false');
+      winnerButton.textContent = isWinner ? 'Winner 🏆' : 'Winner';
+    } else {
+      winnerButton.hidden = false;
+      winnerButton.disabled = true;
+      winnerButton.dataset.filmId = '';
+      winnerButton.dataset.category = '';
+      winnerButton.setAttribute('aria-pressed', 'false');
+      winnerButton.textContent = 'Winner (choose category)';
     }
 
-    for (const film of films) {
-      const card = document.createElement('article');
-      card.className = 'film-card ballot-card admin-ballot-card';
+    card.querySelector('.film-title').textContent = film.title;
 
-      const main = document.createElement('div');
-      main.className = 'ballot-main';
-
-      const copy = document.createElement('div');
-      copy.className = 'ballot-copy';
-
-      const title = document.createElement('h2');
-      title.className = 'film-title';
-      title.textContent = film.title;
-
-      const nominee = maps.nomineeByFilmAndCategory.get(`${film.id}::${categoryName}`) || '';
-      const meta = document.createElement('p');
-      meta.className = 'film-meta';
-      meta.textContent = nominee || 'Nominee details unavailable.';
-      copy.append(title, meta);
-
-      const actions = document.createElement('div');
-      actions.className = 'ballot-actions';
-      const winnerCheckbox = document.createElement('input');
-      winnerCheckbox.type = 'checkbox';
-      winnerCheckbox.className = 'ballot-vote-checkbox';
-      winnerCheckbox.dataset.action = 'winner-checkbox';
-      winnerCheckbox.dataset.category = categoryName;
-      winnerCheckbox.dataset.filmId = film.id;
-      winnerCheckbox.checked = winnerFilmId === film.id;
-      winnerCheckbox.setAttribute('aria-label', `Set ${film.title} as winner for ${categoryName}`);
-      actions.append(winnerCheckbox);
-
-      main.append(copy, actions);
-      card.append(main);
-
-      const adminForm = adminFormTemplate.content.firstElementChild.cloneNode(true);
-      adminForm.dataset.filmId = film.id;
-      adminForm.elements.freeToWatch.checked = Boolean(film.freeToWatch);
-      adminForm.elements.whereToWatchUrl.value = film.whereToWatchOverrideUrl || '';
-      adminForm.elements.posterUrl.value = film.posterOverrideUrl || '';
-      card.append(adminForm);
-
-      section.append(card);
+    const meta = card.querySelector('.film-meta');
+    if (state.category === ALL_CATEGORIES) {
+      meta.textContent = `${categoryNames.length} Nomination${categoryNames.length === 1 ? '' : 's'}`;
+    } else {
+      const nominees = nominatedIn
+        .filter((n) => n.category === state.category)
+        .map((n) => n.nominee)
+        .filter(Boolean);
+      meta.textContent = nominees.length
+        ? nominees.join(' • ')
+        : 'Nominee details unavailable.';
     }
 
-    filmList.append(section);
+    const tags = card.querySelector('.tags');
+    for (const name of categoryNames) {
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'tag category-link';
+      link.dataset.category = name;
+      link.textContent = name;
+      tags.append(link);
+    }
+
+    const availabilityList = card.querySelector('.availability');
+    const wrapper = document.createElement('div');
+    const dt = document.createElement('dt');
+    const dd = document.createElement('dd');
+    const watchUrl = resolveWatchUrl(film);
+    if (watchUrl) {
+      const labelLink = document.createElement('a');
+      labelLink.href = watchUrl;
+      labelLink.target = '_blank';
+      labelLink.rel = 'noopener noreferrer';
+      labelLink.textContent = film.freeToWatch ? 'Free to Watch' : 'Where to Watch';
+      dt.append(labelLink);
+    } else {
+      dt.textContent = 'Unavailable';
+    }
+    dd.textContent = '';
+    wrapper.append(dt, dd);
+    availabilityList.append(wrapper);
+
+    const adminForm = card.querySelector('.admin-form');
+    adminForm.dataset.filmId = film.id;
+    adminForm.elements.freeToWatch.checked = Boolean(film.freeToWatch);
+    adminForm.elements.whereToWatchUrl.value = film.whereToWatchOverrideUrl || '';
+    adminForm.elements.posterUrl.value = film.posterOverrideUrl || '';
+
+    filmList.append(card);
   }
 };
 
 const render = () => {
   buildYearOptions();
-  buildBallotJumpOptions();
+  buildCategoryOptions();
   renderFilms();
-  renderPoolTroubleshoot();
 };
 
 const refresh = async () => {
   await loadNominees();
   await loadDashboardSafe();
-  await loadPoolTroubleshootSearch();
   saveAdminPrefs();
   render();
 };
@@ -675,15 +471,21 @@ const wireEvents = () => {
 
   yearSelect.addEventListener('change', async (event) => {
     state.year = Number(event.target.value);
-    state.ballotJumpCategory = '';
+    state.category = ALL_CATEGORIES;
     saveAdminPrefs();
     await refresh();
   });
 
-  ballotJumpSelect.addEventListener('change', () => {
-    state.ballotJumpCategory = ballotJumpSelect.value;
+  categorySelect.addEventListener('change', async (event) => {
+    state.category = event.target.value;
     saveAdminPrefs();
-    jumpToCategory(state.ballotJumpCategory);
+    await refresh();
+  });
+
+  sortSelect.addEventListener('change', () => {
+    state.sort = sortSelect.value;
+    saveAdminPrefs();
+    renderFilms();
   });
 
   bannerForm.addEventListener('submit', async (event) => {
@@ -762,141 +564,6 @@ const wireEvents = () => {
     }
   });
 
-  clearWinnersButton.addEventListener('click', async () => {
-    if (state.votingLocked) {
-      return;
-    }
-    const entries = Object.entries(state.winnersByCategory || {});
-    if (entries.length === 0) {
-      eventModeSaveStatus.textContent = 'No winners to clear.';
-      eventModeSaveStatus.classList.remove('error');
-      return;
-    }
-    if (eventModeSaveStatusTimer) {
-      clearTimeout(eventModeSaveStatusTimer);
-      eventModeSaveStatusTimer = null;
-    }
-    try {
-      for (const [category, filmId] of entries) {
-        await updateWinner(category, filmId, false);
-      }
-      await loadNominees();
-      await loadDashboardSafe();
-      renderFilms();
-      eventModeSaveStatus.textContent = 'Winners cleared.';
-      eventModeSaveStatus.classList.remove('error');
-      eventModeSaveStatusTimer = setTimeout(() => {
-        eventModeSaveStatus.textContent = '';
-      }, 2200);
-    } catch (error) {
-      eventModeSaveStatus.textContent = `Unable to clear winners. ${error.message}`;
-      eventModeSaveStatus.classList.add('error');
-    }
-  });
-
-  poolTroubleshootForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    poolTroubleshootStatus.textContent = '';
-    poolTroubleshootStatus.classList.remove('error');
-    state.poolTroubleshoot.poolId = (poolTroubleshootPoolId.value || '').trim();
-    state.poolTroubleshoot.userEmail = (poolTroubleshootUserEmail.value || '').trim();
-    try {
-      await loadPoolTroubleshootSearch();
-      state.poolTroubleshoot.selectedPoolId = '';
-      state.poolTroubleshoot.detail = null;
-      renderPoolTroubleshoot();
-      poolTroubleshootStatus.textContent = `Found ${state.poolTroubleshoot.results.length} pool(s).`;
-    } catch (error) {
-      poolTroubleshootStatus.textContent = `Unable to search pools. ${error.message}`;
-      poolTroubleshootStatus.classList.add('error');
-    }
-  });
-
-  poolTroubleshootReset.addEventListener('click', async () => {
-    poolTroubleshootPoolId.value = '';
-    poolTroubleshootUserEmail.value = '';
-    state.poolTroubleshoot.poolId = '';
-    state.poolTroubleshoot.userEmail = '';
-    state.poolTroubleshoot.selectedPoolId = '';
-    state.poolTroubleshoot.detail = null;
-    try {
-      await loadPoolTroubleshootSearch();
-      renderPoolTroubleshoot();
-      poolTroubleshootStatus.textContent = '';
-      poolTroubleshootStatus.classList.remove('error');
-    } catch (error) {
-      poolTroubleshootStatus.textContent = `Unable to reset search. ${error.message}`;
-      poolTroubleshootStatus.classList.add('error');
-    }
-  });
-
-  poolTroubleshootResults.addEventListener('click', async (event) => {
-    const inspectButton = event.target.closest('[data-action="pool-troubleshoot-inspect"]');
-    if (inspectButton) {
-      const poolId = inspectButton.dataset.poolId;
-      try {
-        poolTroubleshootStatus.textContent = 'Loading detail...';
-        await loadPoolTroubleshootDetail(poolId);
-        renderPoolTroubleshoot();
-        poolTroubleshootStatus.textContent = 'Detail loaded.';
-        poolTroubleshootStatus.classList.remove('error');
-      } catch (error) {
-        poolTroubleshootStatus.textContent = `Unable to load detail. ${error.message}`;
-        poolTroubleshootStatus.classList.add('error');
-      }
-      return;
-    }
-
-    const recomputeButton = event.target.closest('[data-action="pool-troubleshoot-recompute"]');
-    if (recomputeButton) {
-      const poolId = recomputeButton.dataset.poolId;
-      try {
-        poolTroubleshootStatus.textContent = 'Recomputing scores...';
-        await recomputePoolScores(poolId);
-        await loadPoolTroubleshootSearch();
-        if (state.poolTroubleshoot.selectedPoolId === poolId) {
-          await loadPoolTroubleshootDetail(poolId);
-        }
-        renderPoolTroubleshoot();
-        poolTroubleshootStatus.textContent = 'Scores recomputed.';
-        poolTroubleshootStatus.classList.remove('error');
-      } catch (error) {
-        poolTroubleshootStatus.textContent = `Unable to recompute scores. ${error.message}`;
-        poolTroubleshootStatus.classList.add('error');
-      }
-      return;
-    }
-
-    const paymentApplyButton = event.target.closest('[data-action="pool-payment-apply"]');
-    if (paymentApplyButton) {
-      const poolId = paymentApplyButton.dataset.poolId;
-      const userId = paymentApplyButton.dataset.userId;
-      const selector = `select[data-action="pool-payment-status"][data-pool-id="${poolId}"][data-user-id="${userId}"]`;
-      const paymentSelect = poolTroubleshootResults.querySelector(selector);
-      if (!(paymentSelect instanceof HTMLSelectElement)) {
-        return;
-      }
-      const status = paymentSelect.value;
-      let rejectionReason = '';
-      if (status === 'rejected') {
-        rejectionReason = window.prompt('Optional rejection reason', '') || '';
-      }
-      try {
-        poolTroubleshootStatus.textContent = 'Updating payment...';
-        await updatePoolPaymentStatus(poolId, userId, status, rejectionReason.trim());
-        await loadPoolTroubleshootSearch();
-        if (state.poolTroubleshoot.selectedPoolId === poolId) {
-          await loadPoolTroubleshootDetail(poolId);
-        }
-        renderPoolTroubleshoot();
-        poolTroubleshootStatus.textContent = 'Payment updated.';
-        poolTroubleshootStatus.classList.remove('error');
-      } catch (error) {
-        poolTroubleshootStatus.textContent = `Unable to update payment. ${error.message}`;
-        poolTroubleshootStatus.classList.add('error');
-      }
-    }
-  });
 
   filmList.addEventListener('submit', async (event) => {
     const form = event.target.closest('.admin-form');
@@ -922,30 +589,22 @@ const wireEvents = () => {
     }
   });
 
-  filmList.addEventListener('change', async (event) => {
-    const winnerCheckbox = event.target.closest('[data-action="winner-checkbox"]');
-    if (!winnerCheckbox) {
-      return;
-    }
-    const category = winnerCheckbox.dataset.category;
-    const filmId = winnerCheckbox.dataset.filmId;
-    const currentlyWinner = state.winnersByCategory?.[category] === filmId;
-    const nextWinner = Boolean(winnerCheckbox.checked);
-    if (currentlyWinner === nextWinner) {
-      return;
-    }
-    try {
-      await updateWinner(category, filmId, nextWinner);
-      await loadNominees();
-      await loadDashboardSafe();
-      renderFilms();
-    } catch (error) {
-      winnerCheckbox.checked = currentlyWinner;
-      alert(`Unable to save winner. ${error.message}`);
-    }
-  });
-
   filmList.addEventListener('click', async (event) => {
+    const winnerButton = event.target.closest('.winner-button');
+    if (winnerButton) {
+      const category = winnerButton.dataset.category;
+      const filmId = winnerButton.dataset.filmId;
+      const current = state.winnersByCategory?.[category] === filmId;
+      await updateWinner(category, filmId, !current);
+      await loadDashboardSafe();
+      if (current) {
+        delete state.winnersByCategory[category];
+      } else {
+        state.winnersByCategory[category] = filmId;
+      }
+      renderFilms();
+      return;
+    }
 
     const clearButton = event.target.closest('.clear-override-button');
     if (clearButton) {
@@ -979,6 +638,18 @@ const wireEvents = () => {
       }
       return;
     }
+
+    const link = event.target.closest('.category-link');
+    if (!link) {
+      return;
+    }
+
+    const nextCategory = link.dataset.category;
+    state.category = nextCategory;
+    categorySelect.value = nextCategory;
+    saveAdminPrefs();
+    await refresh();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 };
 
