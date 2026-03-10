@@ -61,6 +61,7 @@ SMTP_PORT = int(os.getenv('OSCAR_SMTP_PORT', '25'))
 SMTP_USER = os.getenv('OSCAR_SMTP_USER', '').strip()
 SMTP_PASS = os.getenv('OSCAR_SMTP_PASS', '').strip()
 SMTP_STARTTLS = os.getenv('OSCAR_SMTP_STARTTLS', '').lower() in {'1', 'true', 'yes'}
+APP_BUILD_VERSION = os.getenv('OSCAR_BUILD_VERSION', '20260310-2')
 ADMIN_SESSION_COOKIE = 'oscars_admin_session'
 ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 14
 USER_SESSION_COOKIE = 'oscars_user_session'
@@ -637,6 +638,8 @@ class OscarHandler(SimpleHTTPRequestHandler):
             return self._get_user_auth_session()
         if parsed.path == '/api/years':
             return self._get_years()
+        if parsed.path == '/api/app-version':
+            return self._json({'version': APP_BUILD_VERSION})
         if parsed.path.startswith('/api/picks'):
             if not self._require_user_api():
                 return

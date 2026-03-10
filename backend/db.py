@@ -533,10 +533,10 @@ def init_db(db_path=None):
         CREATE INDEX IF NOT EXISTS idx_category_winners_nomination_id ON category_winners(nomination_id);
         '''
     )
-    supporting_actor_reset_key = 'migration:2026-supporting-actor-repick'
+    supporting_roles_reset_key = 'migration:2026-supporting-roles-repick-v2'
     reset_marker = cur.execute(
         'SELECT value FROM system_flags WHERE key = ?',
-        (supporting_actor_reset_key,),
+        (supporting_roles_reset_key,),
     ).fetchone()
     if not reset_marker:
         cur.execute(
@@ -547,7 +547,8 @@ def init_db(db_path=None):
               AND category_id IN (
                 SELECT id
                 FROM categories
-                WHERE year = 2026 AND name = 'Actor in a Supporting Role'
+                WHERE year = 2026
+                  AND name IN ('Actor in a Supporting Role', 'Actress in a Supporting Role')
               )
             '''
         )
@@ -559,7 +560,7 @@ def init_db(db_path=None):
               value=excluded.value,
               updated_at=CURRENT_TIMESTAMP
             ''',
-            (supporting_actor_reset_key,),
+            (supporting_roles_reset_key,),
         )
 
     reset_cols = [r[1] for r in cur.execute('PRAGMA table_info(admin_password_resets)').fetchall()]

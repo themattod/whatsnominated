@@ -14,7 +14,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
     <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
-    <link rel="stylesheet" href="/styles.css?v=20260310-1" />
+    <meta name="app-build-version" content="20260310-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260310-2" />
   </head>
   <body class="user-page">
     <main class="app-shell">
@@ -70,7 +71,6 @@
 
       <section class="controls" aria-label="Filters and controls">
         <div class="control-card">
-          <p class="control-title">Browse</p>
           <div class="control-grid browse-grid">
             <label id="yearControl">
               Year
@@ -92,11 +92,11 @@
                 <option value="nominations">Most Nominations</option>
               </select>
             </label>
+
+            <div id="controlsSummary" class="controls-summary" aria-live="polite"></div>
           </div>
         </div>
       </section>
-
-      <section class="stats" id="stats"></section>
 
       <section id="filmList" class="film-list" aria-live="polite"></section>
       <footer class="site-footer">
@@ -145,8 +145,8 @@
       </article>
     </template>
 
-    <script type="module" src="/user.js?v=20260310-1"></script>
-    <script src="/analytics-config.js?v=20260310-1"></script>
-    <script src="/analytics.js?v=20260310-1"></script>
+    <script type="module" src="/user.js?v=20260310-2"></script>
+    <script src="/analytics-config.js?v=20260310-2"></script>
+    <script src="/analytics.js?v=20260310-2"></script>
   </body>
 </html>

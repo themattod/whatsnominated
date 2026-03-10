@@ -27,6 +27,7 @@ const CATEGORY_VIEW_ORDER = [
   'Writing (Original Screenplay)'
 ];
 const LIVE_SYNC_INTERVAL_MS = 5000;
+const APP_VERSION_CHECK_INTERVAL_MS = 60000;
 const USER_PREFS_KEY = 'oscars:user:prefs';
 const EVENT_MODE_SIGNAL_KEY = 'oscars:event-mode-signal';
 const REPICK_NOTICE_KEY = 'oscars:repick-notice';
@@ -178,7 +179,7 @@ const categoryFilterSummary = document.getElementById('categoryFilterSummary');
 const categoryFilterOptions = document.getElementById('categoryFilterOptions');
 const sortSelect = document.getElementById('sortSelect');
 const sortWrap = document.getElementById('sortWrap');
-const stats = document.getElementById('stats');
+const controlsSummary = document.getElementById('controlsSummary');
 const filmList = document.getElementById('filmList');
 const cardTemplate = document.getElementById('filmCardTemplate');
 const seenProgressLabel = document.getElementById('seenProgressLabel');
@@ -201,9 +202,14 @@ const siteModalTitle = document.getElementById('siteModalTitle');
 const siteModalMessage = document.getElementById('siteModalMessage');
 const siteModalButton = document.getElementById('siteModalButton');
 const appHeader = document.querySelector('.app-header');
+const currentBuildVersion = document
+  .querySelector('meta[name="app-build-version"]')
+  ?.getAttribute('content') || 'dev';
 let liveSyncTimerId = null;
+let appVersionTimerId = null;
 let liveSyncBusy = false;
 let activeModalClose = null;
+let updatePromptShown = false;
 
 const stableObjectSignature = (obj) =>
   JSON.stringify(
@@ -531,6 +537,9 @@ const buildDisplayGroups = () => {
 };
 
 const renderStats = (groups) => {
+  if (!controlsSummary) {
+    return;
+  }
   const selected = selectedCategoriesInOrder();
   const uniqueFilmIds = new Set();
   const uniqueSeenFilmIds = new Set();
@@ -549,14 +558,14 @@ const renderStats = (groups) => {
     const categoryRows = state.nominations.filter((n) => n.category === category);
     const filteredRows = categoryRows.filter((n) => passesSeenFilters(n.filmId));
     const categorySeenCount = filteredRows.filter((n) => state.seenFilmIds.has(n.filmId)).length;
-    stats.textContent = `You have seen ${categorySeenCount} of ${filteredRows.length} ${selected[0]} nominees`;
+    controlsSummary.textContent = `You have seen ${categorySeenCount} of ${filteredRows.length} ${selected[0]} nominees`;
     return;
   }
   if (!state.groupAllCategories && selected.length === 0 && !state.seenOnlyFilter && !state.unseenOnlyFilter) {
-    stats.textContent = `You have seen ${seenCount} of ${rowCount} nominated films`;
+    controlsSummary.textContent = `You have seen ${seenCount} of ${rowCount} nominated films`;
     return;
   }
-  stats.textContent = `You have seen ${seenCount} of ${rowCount} films in this view`;
+  controlsSummary.textContent = `You have seen ${seenCount} of ${rowCount} films in this view`;
 };
 
 const renderProgress = () => {
@@ -643,7 +652,9 @@ const renderProgress = () => {
 };
 
 const renderFilms = () => {
-  sortWrap.hidden = false;
+  const selected = selectedCategoriesInOrder();
+  const showSort = !state.groupAllCategories && selected.length === 0;
+  sortWrap.hidden = !showSort;
   sortSelect.value = state.sort;
   sizeSelectToOptions(sortSelect);
 
@@ -652,7 +663,6 @@ const renderFilms = () => {
   renderProgress();
   filmList.innerHTML = '';
 
-  const selected = selectedCategoriesInOrder();
   const multiCategoryMode = selected.length > 1;
   for (const group of groups) {
     if (group.rows.length === 0) {
@@ -1054,11 +1064,42 @@ const maybeOpenPreviewModal = async () => {
   });
 };
 
+const startAppVersionCheck = () => {
+  if (appVersionTimerId) {
+    clearInterval(appVersionTimerId);
+    appVersionTimerId = null;
+  }
+
+  appVersionTimerId = setInterval(async () => {
+    if (document.hidden || updatePromptShown || activeModalClose) {
+      return;
+    }
+    try {
+      const payload = await api('/api/app-version');
+      const nextVersion = String(payload?.version || '').trim();
+      if (!nextVersion || nextVersion === currentBuildVersion) {
+        return;
+      }
+      updatePromptShown = true;
+      await showSiteModal({
+        eyebrow: 'Update Available',
+        title: 'Refresh for the Latest Version',
+        message: 'A new version of whatsnominated is ready. Refresh now to get the latest fixes and ballot updates.',
+        buttonLabel: 'Refresh Now'
+      });
+      window.location.reload();
+    } catch {
+      // Skip transient version check failures.
+    }
+  }, APP_VERSION_CHECK_INTERVAL_MS);
+};
+
 const start = async () => {
   await loadYears();
   await refresh();
   wireEvents();
   await maybeOpenPreviewModal();
+  startAppVersionCheck();
 };
 
 start().catch((error) => {
