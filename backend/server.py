@@ -2567,14 +2567,25 @@ class OscarHandler(SimpleHTTPRequestHandler):
               FROM user_seen us
               WHERE us.year = ? AND us.seen = 1
               GROUP BY us.user_key
+            ),
+            all_viewer_scores AS (
+              SELECT user_key, seen_count
+              FROM viewer_scores
+              UNION ALL
+              SELECT ?, ?
+              WHERE NOT EXISTS (
+                SELECT 1
+                FROM viewer_scores
+                WHERE user_key = ?
+              )
             )
             SELECT
               SUM(CASE WHEN seen_count < ? THEN 1 ELSE 0 END) AS beaten,
               COUNT(*) AS total_others
-            FROM viewer_scores
+            FROM all_viewer_scores
             WHERE user_key <> ?
             ''',
-            (year, user_seen_count, user_key),
+            (year, user_key, user_seen_count, user_key, user_seen_count, user_key),
         ).fetchone()
         viewing_beaten = viewing_vs_others['beaten'] if viewing_vs_others else 0
         viewing_total_others = viewing_vs_others['total_others'] if viewing_vs_others else 0
@@ -2592,20 +2603,25 @@ class OscarHandler(SimpleHTTPRequestHandler):
               WHERE us.year = ? AND us.seen = 1
               GROUP BY us.user_key
             ),
-            current_score AS (
-              SELECT COALESCE(
-                (SELECT seen_count FROM viewer_scores WHERE user_key = ?),
-                0
-              ) AS seen_count
+            all_viewer_scores AS (
+              SELECT user_key, seen_count
+              FROM viewer_scores
+              UNION ALL
+              SELECT ?, ?
+              WHERE NOT EXISTS (
+                SELECT 1
+                FROM viewer_scores
+                WHERE user_key = ?
+              )
             )
             SELECT
-              1 + COALESCE(SUM(CASE WHEN vs.seen_count > (SELECT seen_count FROM current_score) THEN 1 ELSE 0 END), 0) AS rank_position,
+              1 + COALESCE(SUM(CASE WHEN vs.seen_count > ? THEN 1 ELSE 0 END), 0) AS rank_position,
               COUNT(*) AS ranked_user_count,
-              COALESCE(SUM(CASE WHEN vs.seen_count = (SELECT seen_count FROM current_score) THEN 1 ELSE 0 END), 0) AS tied_user_count
-            FROM viewer_scores vs
+              COALESCE(SUM(CASE WHEN vs.seen_count = ? THEN 1 ELSE 0 END), 0) AS tied_user_count
+            FROM all_viewer_scores vs
             '''
             ,
-            (year, user_key),
+            (year, user_key, user_seen_count, user_key, user_seen_count, user_seen_count),
         ).fetchone()
         viewing_rank_position = (
             viewing_rank_row['rank_position']
@@ -2618,6 +2634,8 @@ class OscarHandler(SimpleHTTPRequestHandler):
             if viewing_rank_row and viewing_rank_row['ranked_user_count']
             else 1
         )
+        if viewing_ranked_user_count:
+            viewing_rank_position = min(viewing_rank_position, viewing_ranked_user_count)
 
         winner_count_row = conn.execute(
             'SELECT COUNT(*) AS count FROM category_winners WHERE year = ?',
