@@ -333,7 +333,9 @@ const loadSeen = async () => {
   const repickSignature = JSON.stringify([...repickCategories].sort());
   const priorRepickSignature = localStorage.getItem(repickNoticeKey(state.year, state.userKey)) || '[]';
   if (repickCategories.length && repickSignature !== priorRepickSignature) {
-    const categoryList = repickCategories.join(', ');
+    const categoryList = repickCategories.length === 2
+      ? `${repickCategories[0]} and ${repickCategories[1]}`
+      : repickCategories.join(', ');
     showSiteModal({
       eyebrow: 'Ballot Update',
       title: 'Please Pick Again',

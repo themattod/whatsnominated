@@ -2703,12 +2703,21 @@ class OscarHandler(SimpleHTTPRequestHandler):
         ranked_user_count = rank_row['ranked_user_count'] if rank_row else 0
         tied_user_count = rank_row['tied_user_count'] if rank_row and rank_row['ranked_user_count'] else 1
 
+        repick_categories = [row['category'] for row in unresolved_repick_rows]
+        supporting_pair = {'Actor in a Supporting Role', 'Actress in a Supporting Role'}
+        if any(category in supporting_pair for category in repick_categories):
+            repick_categories = [
+                'Actor in a Supporting Role',
+                'Actress in a Supporting Role',
+                *[category for category in repick_categories if category not in supporting_pair],
+            ]
+
         conn.close()
         self._json(
             {
                 'seenFilmIds': [row['film_id'] for row in rows],
                 'picksByCategory': {row['category']: row['nominationId'] for row in picks},
-                'repickCategories': [row['category'] for row in unresolved_repick_rows],
+                'repickCategories': repick_categories,
                 'performance': {
                     'viewingBetterThanPercent': viewing_better_than_percent,
                     'viewingComparedUserCount': viewing_total_others,
