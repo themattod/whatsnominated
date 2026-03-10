@@ -14,7 +14,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32-v2.png?v=20260217-2" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16-v2.png?v=20260217-2" />
     <link rel="shortcut icon" href="/favicon-v2.png?v=20260217-2" />
-    <link rel="stylesheet" href="/styles.css?v=20260309-3" />
+    <link rel="stylesheet" href="/styles.css?v=20260310-1" />
   </head>
   <body class="user-page">
     <main class="app-shell">
@@ -105,6 +105,24 @@
       </footer>
     </main>
 
+    <div id="siteModal" class="site-modal" hidden>
+      <div class="site-modal-backdrop" data-modal-close></div>
+      <section
+        class="site-modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="siteModalTitle"
+        aria-describedby="siteModalMessage"
+      >
+        <p id="siteModalEyebrow" class="site-modal-eyebrow">Tracker Update</p>
+        <h2 id="siteModalTitle" class="site-modal-title">Action Needed</h2>
+        <p id="siteModalMessage" class="site-modal-message"></p>
+        <div class="site-modal-actions">
+          <button id="siteModalButton" type="button" class="ghost-button">OK</button>
+        </div>
+      </section>
+    </div>
+
     <template id="filmCardTemplate">
       <article class="film-card">
         <button type="button" class="seen-button"></button>
@@ -127,8 +145,8 @@
       </article>
     </template>
 
-    <script type="module" src="/user.js?v=20260309-3"></script>
-    <script src="/analytics-config.js?v=20260309-3"></script>
-    <script src="/analytics.js?v=20260309-3"></script>
+    <script type="module" src="/user.js?v=20260310-1"></script>
+    <script src="/analytics-config.js?v=20260310-1"></script>
+    <script src="/analytics.js?v=20260310-1"></script>
   </body>
 </html>

@@ -425,6 +425,12 @@ def init_db(db_path=None):
           expires_at TEXT NOT NULL,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS system_flags (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
         '''
     )
 
@@ -465,6 +471,96 @@ def init_db(db_path=None):
         cur.execute('ALTER TABLE admin_sessions ADD COLUMN csrf_token TEXT NOT NULL DEFAULT ""')
     except sqlite3.OperationalError:
         pass
+
+    # Support nominee-instance picks/winners for categories where the same film
+    # can appear more than once (for example multiple acting nominees).
+    for table in ('user_picks', 'category_winners'):
+        try:
+            cur.execute(f'ALTER TABLE {table} ADD COLUMN nomination_id INTEGER REFERENCES nominations(id) ON DELETE CASCADE')
+        except sqlite3.OperationalError:
+            pass
+
+    cur.execute(
+        '''
+        UPDATE user_picks
+        SET nomination_id = (
+          SELECT n.id
+          FROM nominations n
+          WHERE n.year = user_picks.year
+            AND n.category_id = user_picks.category_id
+            AND n.film_id = user_picks.film_id
+          GROUP BY n.year, n.category_id, n.film_id
+          HAVING COUNT(*) = 1
+        )
+        WHERE nomination_id IS NULL
+        '''
+    )
+    cur.execute(
+        '''
+        UPDATE category_winners
+        SET nomination_id = (
+          SELECT n.id
+          FROM nominations n
+          WHERE n.year = category_winners.year
+            AND n.category_id = category_winners.category_id
+            AND n.film_id = category_winners.film_id
+          GROUP BY n.year, n.category_id, n.film_id
+          HAVING COUNT(*) = 1
+        )
+        WHERE nomination_id IS NULL
+        '''
+    )
+    # If a category/film pair has multiple nominee rows, leave legacy picks unresolved
+    # so the user can explicitly choose the intended nominee after deploy.
+    cur.execute(
+        '''
+        UPDATE user_picks
+        SET nomination_id = NULL
+        WHERE EXISTS (
+          SELECT 1
+          FROM nominations n
+          WHERE n.year = user_picks.year
+            AND n.category_id = user_picks.category_id
+            AND n.film_id = user_picks.film_id
+          GROUP BY n.year, n.category_id, n.film_id
+          HAVING COUNT(*) > 1
+        )
+        '''
+    )
+    cur.executescript(
+        '''
+        CREATE INDEX IF NOT EXISTS idx_user_picks_nomination_id ON user_picks(nomination_id);
+        CREATE INDEX IF NOT EXISTS idx_category_winners_nomination_id ON category_winners(nomination_id);
+        '''
+    )
+    supporting_actor_reset_key = 'migration:2026-supporting-actor-repick'
+    reset_marker = cur.execute(
+        'SELECT value FROM system_flags WHERE key = ?',
+        (supporting_actor_reset_key,),
+    ).fetchone()
+    if not reset_marker:
+        cur.execute(
+            '''
+            UPDATE user_picks
+            SET nomination_id = NULL
+            WHERE year = 2026
+              AND category_id IN (
+                SELECT id
+                FROM categories
+                WHERE year = 2026 AND name = 'Actor in a Supporting Role'
+              )
+            '''
+        )
+        cur.execute(
+            '''
+            INSERT INTO system_flags(key, value)
+            VALUES(?, 'done')
+            ON CONFLICT(key) DO UPDATE SET
+              value=excluded.value,
+              updated_at=CURRENT_TIMESTAMP
+            ''',
+            (supporting_actor_reset_key,),
+        )
 
     reset_cols = [r[1] for r in cur.execute('PRAGMA table_info(admin_password_resets)').fetchall()]
     if reset_cols and 'token_hash' not in reset_cols:

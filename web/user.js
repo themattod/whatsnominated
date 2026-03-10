@@ -29,6 +29,7 @@ const CATEGORY_VIEW_ORDER = [
 const LIVE_SYNC_INTERVAL_MS = 5000;
 const USER_PREFS_KEY = 'oscars:user:prefs';
 const EVENT_MODE_SIGNAL_KEY = 'oscars:event-mode-signal';
+const REPICK_NOTICE_KEY = 'oscars:repick-notice';
 const makeUserKey = () =>
   (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
@@ -168,6 +169,8 @@ const saveLocalPicks = (picksByCategory) => {
   );
 };
 
+const repickNoticeKey = (year, userKey) => `${REPICK_NOTICE_KEY}:${year}:${userKey}`;
+
 const yearSelect = document.getElementById('yearSelect');
 const yearControlLabel = document.getElementById('yearControl');
 const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
@@ -192,9 +195,15 @@ const compareProgressLabel = document.getElementById('compareProgressLabel');
 const compareProgressCount = document.getElementById('compareProgressCount');
 const compareProgressFill = document.getElementById('compareProgressFill');
 const announcementBanner = document.getElementById('announcementBanner');
+const siteModal = document.getElementById('siteModal');
+const siteModalEyebrow = document.getElementById('siteModalEyebrow');
+const siteModalTitle = document.getElementById('siteModalTitle');
+const siteModalMessage = document.getElementById('siteModalMessage');
+const siteModalButton = document.getElementById('siteModalButton');
 const appHeader = document.querySelector('.app-header');
 let liveSyncTimerId = null;
 let liveSyncBusy = false;
+let activeModalClose = null;
 
 const stableObjectSignature = (obj) =>
   JSON.stringify(
@@ -223,6 +232,38 @@ const api = async (path, options = {}) => {
     throw new Error(`API error ${response.status}: ${path}${details ? ` - ${details}` : ''}`);
   }
   return response.json();
+};
+
+const showSiteModal = ({
+  eyebrow = 'Tracker Update',
+  title = 'Action Needed',
+  message = '',
+  buttonLabel = 'OK'
+}) => {
+  if (!siteModal || !siteModalEyebrow || !siteModalTitle || !siteModalMessage || !siteModalButton) {
+    window.alert(message || title);
+    return Promise.resolve();
+  }
+
+  siteModalEyebrow.textContent = eyebrow;
+  siteModalTitle.textContent = title;
+  siteModalMessage.textContent = message;
+  siteModalButton.textContent = buttonLabel;
+  siteModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+
+  return new Promise((resolve) => {
+    const close = () => {
+      siteModal.hidden = true;
+      document.body.style.overflow = '';
+      if (activeModalClose === close) {
+        activeModalClose = null;
+      }
+      resolve();
+    };
+    activeModalClose = close;
+    siteModalButton.focus();
+  });
 };
 
 const unique = (items) => [...new Set(items)];
@@ -274,7 +315,27 @@ const loadSeen = async () => {
     `/api/user-state?year=${state.year}&userKey=${encodeURIComponent(state.userKey)}`
   );
   state.seenFilmIds = new Set(payload.seenFilmIds || []);
-  state.picksByCategory = { ...loadLocalPicks(), ...(payload.picksByCategory || {}) };
+  const repickCategories = Array.isArray(payload.repickCategories)
+    ? payload.repickCategories.filter((value) => typeof value === 'string' && value.trim())
+    : [];
+  const localPicks = { ...loadLocalPicks() };
+  for (const category of repickCategories) {
+    delete localPicks[category];
+  }
+  state.picksByCategory = { ...localPicks, ...(payload.picksByCategory || {}) };
+  saveLocalPicks(state.picksByCategory);
+  const repickSignature = JSON.stringify([...repickCategories].sort());
+  const priorRepickSignature = localStorage.getItem(repickNoticeKey(state.year, state.userKey)) || '[]';
+  if (repickCategories.length && repickSignature !== priorRepickSignature) {
+    const categoryList = repickCategories.join(', ');
+    showSiteModal({
+      eyebrow: 'Ballot Update',
+      title: 'Please Pick Again',
+      message: `Your previous pick${repickCategories.length === 1 ? '' : 's'} in ${categoryList} need${repickCategories.length === 1 ? 's' : ''} to be selected again.`,
+      buttonLabel: 'Continue'
+    });
+  }
+  localStorage.setItem(repickNoticeKey(state.year, state.userKey), repickSignature);
   state.performance = payload.performance || {
     viewingBetterThanPercent: 0,
     viewingComparedUserCount: 0,
@@ -448,14 +509,22 @@ const buildDisplayGroups = () => {
   const groups = [];
   for (const category of selected) {
     const nominatedRows = state.nominations.filter((n) => n.category === category);
-    const filmIds = unique(nominatedRows.map((n) => n.filmId));
     const counts = countsByCategory.get(category) || new Map();
-    const rows = filmIds
-      .map((filmId) => state.films.find((film) => film.id === filmId))
-      .filter(Boolean)
-      .filter((film) => passesSeenFilters(film.id))
-      .sort(compareFilms(counts))
-      .map((film) => ({ film, contextCategory: category }));
+    const rows = nominatedRows
+      .map((nomination) => ({
+        nomination,
+        film: state.films.find((film) => film.id === nomination.filmId),
+        contextCategory: category
+      }))
+      .filter((row) => row.film)
+      .filter((row) => passesSeenFilters(row.film.id))
+      .sort((a, b) => {
+        const byFilm = compareFilms(counts)(a.film, b.film);
+        if (byFilm !== 0) {
+          return byFilm;
+        }
+        return String(a.nomination.nominee || '').localeCompare(String(b.nomination.nominee || ''));
+      });
     groups.push({ category, rows });
   }
   return groups;
@@ -476,7 +545,11 @@ const renderStats = (groups) => {
   const rowCount = uniqueFilmIds.size;
   const seenCount = uniqueSeenFilmIds.size;
   if (selected.length === 1 && !state.seenOnlyFilter && !state.unseenOnlyFilter) {
-    stats.textContent = `You have seen ${seenCount} of ${rowCount} ${selected[0]} nominees`;
+    const category = selected[0];
+    const categoryRows = state.nominations.filter((n) => n.category === category);
+    const filteredRows = categoryRows.filter((n) => passesSeenFilters(n.filmId));
+    const categorySeenCount = filteredRows.filter((n) => state.seenFilmIds.has(n.filmId)).length;
+    stats.textContent = `You have seen ${categorySeenCount} of ${filteredRows.length} ${selected[0]} nominees`;
     return;
   }
   if (!state.groupAllCategories && selected.length === 0 && !state.seenOnlyFilter && !state.unseenOnlyFilter) {
@@ -543,8 +616,8 @@ const renderProgress = () => {
   }
 
   let correct = 0;
-  for (const [category, winnerFilmId] of winnerEntries) {
-    if (state.picksByCategory?.[category] === winnerFilmId) {
+  for (const [category, winnerNominationId] of winnerEntries) {
+    if (Number(state.picksByCategory?.[category] || 0) === Number(winnerNominationId || 0)) {
       correct += 1;
     }
   }
@@ -595,113 +668,116 @@ const renderFilms = () => {
     for (const row of group.rows) {
       const film = row.film;
       const contextCategory = row.contextCategory;
-    const card = cardTemplate.content.firstElementChild.cloneNode(true);
-    const nominatedIn = state.nominations.filter((n) => n.filmId === film.id);
-    const categoryNames = unique(nominatedIn.map((n) => n.category));
-    const seen = state.seenFilmIds.has(film.id);
+      const selectedNomination = row.nomination || null;
+      const card = cardTemplate.content.firstElementChild.cloneNode(true);
+      const nominatedIn = state.nominations.filter((n) => n.filmId === film.id);
+      const categoryNames = unique(nominatedIn.map((n) => n.category));
+      const nominationCount = nominatedIn.length;
+      const seen = state.seenFilmIds.has(film.id);
 
-    card.classList.toggle('seen-true', seen);
-    const seenButton = card.querySelector('.seen-button');
-    seenButton.dataset.filmId = film.id;
-    seenButton.setAttribute('aria-pressed', seen ? 'true' : 'false');
-    seenButton.textContent = seen ? 'Seen ✅' : 'Seen?';
+      card.classList.toggle('seen-true', seen);
+      const seenButton = card.querySelector('.seen-button');
+      seenButton.dataset.filmId = film.id;
+      seenButton.setAttribute('aria-pressed', seen ? 'true' : 'false');
+      seenButton.textContent = seen ? 'Seen ✅' : 'Seen?';
 
-    const pickButton = card.querySelector('.pick-button');
-    const pickHint = card.querySelector('.pick-hint');
-    const winnerLabel = card.querySelector('.winner-label');
-    const singleCategory = contextCategory || '';
-    if (singleCategory) {
-      const category = singleCategory;
-      const pickedFilmId = state.picksByCategory?.[category];
-      const winnerFilmId = state.winnersByCategory?.[category];
-      const locked = Boolean(state.votingLocked);
-      const picked = pickedFilmId === film.id;
-      const isWinner = winnerFilmId === film.id;
+      const pickButton = card.querySelector('.pick-button');
+      const pickHint = card.querySelector('.pick-hint');
+      const winnerLabel = card.querySelector('.winner-label');
+      const singleCategory = contextCategory || '';
+      if (singleCategory) {
+        const category = singleCategory;
+        const nominationId = Number(selectedNomination?.nominationId || 0);
+        const pickedNominationId = Number(state.picksByCategory?.[category] || 0);
+        const winnerNominationId = Number(state.winnersByCategory?.[category] || 0);
+        const locked = Boolean(state.votingLocked);
+        const picked = pickedNominationId === nominationId;
+        const isWinner = winnerNominationId === nominationId;
 
-      pickButton.hidden = locked && !picked;
-      pickButton.dataset.filmId = film.id;
-      pickButton.dataset.category = category;
-      pickButton.dataset.locked = locked ? 'true' : 'false';
-      pickButton.dataset.pickResult = 'pending';
-      pickButton.disabled = locked;
-      pickButton.setAttribute('aria-pressed', picked ? 'true' : 'false');
-      if (picked && winnerFilmId) {
-        pickButton.dataset.pickResult = isWinner ? 'correct' : 'incorrect';
+        pickButton.hidden = locked && !picked;
+        pickButton.dataset.filmId = film.id;
+        pickButton.dataset.nominationId = String(nominationId);
+        pickButton.dataset.category = category;
+        pickButton.dataset.locked = locked ? 'true' : 'false';
+        pickButton.dataset.pickResult = 'pending';
+        pickButton.disabled = locked;
+        pickButton.setAttribute('aria-pressed', picked ? 'true' : 'false');
+        if (picked && winnerNominationId) {
+          pickButton.dataset.pickResult = isWinner ? 'correct' : 'incorrect';
+        }
+        const pickedSuffix =
+          picked && winnerNominationId && !isWinner ? ' ❌' : (picked ? ' ✅' : '');
+        pickButton.textContent = locked
+          ? `🔒 My Pick${pickedSuffix}`
+          : `My Pick${pickedSuffix}`;
+
+        winnerLabel.hidden = !isWinner;
+        pickHint.hidden = true;
+      } else {
+        pickButton.hidden = true;
+        pickButton.disabled = false;
+        pickButton.dataset.pickResult = 'pending';
+        winnerLabel.hidden = true;
+        pickHint.hidden = false;
       }
-      const pickedSuffix =
-        picked && winnerFilmId && !isWinner ? ' ❌' : (picked ? ' ✅' : '');
-      pickButton.textContent = locked
-        ? `🔒 My Pick${pickedSuffix}`
-        : `My Pick${pickedSuffix}`;
 
-      winnerLabel.hidden = !isWinner;
-      pickHint.hidden = true;
-    } else {
-      pickButton.hidden = true;
-      pickButton.disabled = false;
-      pickButton.dataset.pickResult = 'pending';
-      winnerLabel.hidden = true;
-      pickHint.hidden = false;
-    }
-
-    const posterImage = card.querySelector('.poster-image');
-    const posterFallback = card.querySelector('.poster-fallback');
-    posterImage.src = resolvePosterUrl(film);
-    posterImage.alt = `${film.title} poster`;
-    posterImage.hidden = false;
-    posterFallback.hidden = true;
-    posterImage.onload = () => {
+      const posterImage = card.querySelector('.poster-image');
+      const posterFallback = card.querySelector('.poster-fallback');
+      posterImage.src = resolvePosterUrl(film);
+      posterImage.alt = `${film.title} poster`;
       posterImage.hidden = false;
       posterFallback.hidden = true;
-    };
-    posterImage.onerror = () => {
-      posterImage.hidden = true;
-      posterFallback.hidden = false;
-    };
+      posterImage.onload = () => {
+        posterImage.hidden = false;
+        posterFallback.hidden = true;
+      };
+      posterImage.onerror = () => {
+        posterImage.hidden = true;
+        posterFallback.hidden = false;
+      };
 
-    card.querySelector('.film-title').textContent = film.title;
+      card.querySelector('.film-title').textContent = film.title;
 
-    const meta = card.querySelector('.film-meta');
-    if (!singleCategory) {
-      meta.textContent = `${categoryNames.length} Nomination${categoryNames.length === 1 ? '' : 's'}`;
-    } else {
-      const nominees = nominatedIn
-        .filter((n) => n.category === singleCategory)
-        .map((n) => n.nominee)
-        .filter(Boolean);
-      meta.textContent = nominees.length
-        ? nominees.join(' • ')
-        : 'Nominee details unavailable.';
-    }
+      const meta = card.querySelector('.film-meta');
+      if (!singleCategory) {
+        meta.textContent = `${nominationCount} Nomination${nominationCount === 1 ? '' : 's'}`;
+      } else {
+        meta.textContent = selectedNomination?.nominee || 'Nominee details unavailable.';
+      }
 
-    const tags = card.querySelector('.tags');
-    for (const name of categoryNames) {
-      const link = document.createElement('button');
-      link.type = 'button';
-      link.className = 'tag category-link';
-      link.dataset.category = name;
-      link.textContent = name;
-      tags.append(link);
-    }
+      const tags = card.querySelector('.tags');
+      const showCategoryTags = !singleCategory && !state.groupAllCategories && selected.length === 0;
+      if (showCategoryTags) {
+        for (const name of categoryNames) {
+          const link = document.createElement('button');
+          link.type = 'button';
+          link.className = 'tag category-link';
+          link.dataset.category = name;
+          link.textContent = name;
+          tags.append(link);
+        }
+      } else {
+        tags.hidden = true;
+      }
 
-    const availabilityList = card.querySelector('.availability');
-    const wrapper = document.createElement('div');
-    const dt = document.createElement('dt');
-    const dd = document.createElement('dd');
-    const watchUrl = resolveWatchUrl(film);
-    if (watchUrl) {
-      const labelLink = document.createElement('a');
-      labelLink.href = watchUrl;
-      labelLink.target = '_blank';
-      labelLink.rel = 'noopener noreferrer';
-      labelLink.textContent = film.freeToWatch ? 'Free to Watch' : 'Where to Watch';
-      dt.append(labelLink);
-    } else {
-      dt.textContent = 'Unavailable';
-    }
-    dd.textContent = '';
-    wrapper.append(dt, dd);
-    availabilityList.append(wrapper);
+      const availabilityList = card.querySelector('.availability');
+      const wrapper = document.createElement('div');
+      const dt = document.createElement('dt');
+      const dd = document.createElement('dd');
+      const watchUrl = resolveWatchUrl(film);
+      if (watchUrl) {
+        const labelLink = document.createElement('a');
+        labelLink.href = watchUrl;
+        labelLink.target = '_blank';
+        labelLink.rel = 'noopener noreferrer';
+        labelLink.textContent = film.freeToWatch ? 'Free to Watch' : 'Where to Watch';
+        dt.append(labelLink);
+      } else {
+        dt.textContent = 'Unavailable';
+      }
+      dd.textContent = '';
+      wrapper.append(dt, dd);
+      availabilityList.append(wrapper);
 
       filmList.append(card);
     }
@@ -741,12 +817,12 @@ const updateSeen = async (filmId, seen) => {
   });
 };
 
-const updatePick = async (category, filmId, picked) => {
+const updatePick = async (category, filmId, nominationId, picked) => {
   saveLocalPicks(state.picksByCategory);
   await api('/api/user-pick', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ year: state.year, userKey: state.userKey, category, filmId, picked })
+    body: JSON.stringify({ year: state.year, userKey: state.userKey, category, filmId, nominationId, picked })
   });
 };
 
@@ -781,6 +857,29 @@ const wireEvents = () => {
     });
   });
 
+  if (siteModal) {
+    siteModal.addEventListener('click', (event) => {
+      if (!event.target.closest('.site-modal-dialog') && activeModalClose) {
+        activeModalClose();
+      }
+      if (event.target.closest('[data-modal-close]') && activeModalClose) {
+        activeModalClose();
+      }
+    });
+  }
+  if (siteModalButton) {
+    siteModalButton.addEventListener('click', () => {
+      if (activeModalClose) {
+        activeModalClose();
+      }
+    });
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && activeModalClose && siteModal && !siteModal.hidden) {
+      activeModalClose();
+    }
+  });
+
   filmList.addEventListener('click', async (event) => {
     const seenButton = event.target.closest('.seen-button');
     if (seenButton) {
@@ -803,21 +902,22 @@ const wireEvents = () => {
       }
       const category = pickButton.dataset.category;
       const filmId = pickButton.dataset.filmId;
-      const currentlyPicked = state.picksByCategory?.[category] === filmId;
+      const nominationId = Number(pickButton.dataset.nominationId || 0);
+      const currentlyPicked = Number(state.picksByCategory?.[category] || 0) === nominationId;
       const nextPicked = !currentlyPicked;
 
       if (currentlyPicked) {
         delete state.picksByCategory[category];
       } else {
-        state.picksByCategory[category] = filmId;
+        state.picksByCategory[category] = nominationId;
       }
       renderFilms();
 
       try {
-        await updatePick(category, filmId, nextPicked);
+        await updatePick(category, filmId, nominationId, nextPicked);
       } catch (error) {
         if (currentlyPicked) {
-          state.picksByCategory[category] = filmId;
+          state.picksByCategory[category] = nominationId;
         } else {
           delete state.picksByCategory[category];
         }
@@ -941,10 +1041,24 @@ const startLiveSync = () => {
   }, LIVE_SYNC_INTERVAL_MS);
 };
 
+const maybeOpenPreviewModal = async () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('previewRepickModal') !== '1') {
+    return;
+  }
+  await showSiteModal({
+    eyebrow: 'Ballot Update',
+    title: 'Please Pick Again',
+    message: 'Your previous pick in Actor in a Supporting Role needs to be selected again.',
+    buttonLabel: 'Continue'
+  });
+};
+
 const start = async () => {
   await loadYears();
   await refresh();
   wireEvents();
+  await maybeOpenPreviewModal();
 };
 
 start().catch((error) => {

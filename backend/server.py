@@ -2189,14 +2189,14 @@ class OscarHandler(SimpleHTTPRequestHandler):
         user_scores_row = conn.execute(
             '''
             WITH winner_categories AS (
-              SELECT category_id, film_id
+              SELECT category_id, nomination_id
               FROM category_winners
               WHERE year = ?
             ),
             user_scores AS (
               SELECT
                 up.user_key AS user_key,
-                SUM(CASE WHEN up.film_id = wc.film_id THEN 1 ELSE 0 END) AS correct
+                SUM(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
               FROM user_picks up
               JOIN winner_categories wc ON wc.category_id = up.category_id
               WHERE up.year = ?
@@ -2456,7 +2456,7 @@ class OscarHandler(SimpleHTTPRequestHandler):
 
         nominations = conn.execute(
             '''
-            SELECT c.name AS category, n.film_id AS filmId, n.nominee
+            SELECT c.name AS category, n.id AS nominationId, n.film_id AS filmId, n.nominee
             FROM nominations n
             JOIN categories c ON c.id = n.category_id
             WHERE n.year = ?
@@ -2467,7 +2467,7 @@ class OscarHandler(SimpleHTTPRequestHandler):
 
         winners = conn.execute(
             '''
-            SELECT c.name AS category, cw.film_id AS filmId
+            SELECT c.name AS category, cw.nomination_id AS nominationId, cw.film_id AS filmId
             FROM category_winners cw
             JOIN categories c ON c.id = cw.category_id
             WHERE cw.year = ?
@@ -2516,7 +2516,7 @@ class OscarHandler(SimpleHTTPRequestHandler):
             ],
             'films': films,
             'nominations': [dict(row) for row in nominations],
-            'winnersByCategory': {row['category']: row['filmId'] for row in winners},
+            'winnersByCategory': {row['category']: row['nominationId'] for row in winners},
             'eventMode': bool(event_mode['enabled']) if event_mode else False,
             'votingLocked': bool(voting_lock['enabled']) if voting_lock else False,
             'banner': {
@@ -2536,10 +2536,20 @@ class OscarHandler(SimpleHTTPRequestHandler):
 
         picks = conn.execute(
             '''
-            SELECT c.name AS category, up.film_id AS filmId
+            SELECT c.name AS category, up.nomination_id AS nominationId, up.film_id AS filmId
             FROM user_picks up
             JOIN categories c ON c.id = up.category_id
-            WHERE up.year = ? AND up.user_key = ?
+            WHERE up.year = ? AND up.user_key = ? AND up.nomination_id IS NOT NULL
+            ''',
+            (year, user_key),
+        ).fetchall()
+        unresolved_repick_rows = conn.execute(
+            '''
+            SELECT c.name AS category
+            FROM user_picks up
+            JOIN categories c ON c.id = up.category_id
+            WHERE up.year = ? AND up.user_key = ? AND up.nomination_id IS NULL
+            ORDER BY c.name
             ''',
             (year, user_key),
         ).fetchall()
@@ -2619,7 +2629,7 @@ class OscarHandler(SimpleHTTPRequestHandler):
             JOIN category_winners cw
               ON cw.year = up.year
              AND cw.category_id = up.category_id
-             AND cw.film_id = up.film_id
+             AND cw.nomination_id = up.nomination_id
             WHERE up.year = ? AND up.user_key = ?
             ''',
             (year, user_key),
@@ -2629,14 +2639,14 @@ class OscarHandler(SimpleHTTPRequestHandler):
         other_scores = conn.execute(
             '''
             WITH winner_categories AS (
-              SELECT category_id, film_id
+              SELECT category_id, nomination_id
               FROM category_winners
               WHERE year = ?
             ),
             user_scores AS (
               SELECT
                 up.user_key AS user_key,
-                SUM(CASE WHEN up.film_id = wc.film_id THEN 1 ELSE 0 END) AS correct
+                SUM(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
               FROM user_picks up
               JOIN winner_categories wc ON wc.category_id = up.category_id
               WHERE up.year = ?
@@ -2659,14 +2669,14 @@ class OscarHandler(SimpleHTTPRequestHandler):
         rank_row = conn.execute(
             '''
             WITH winner_categories AS (
-              SELECT category_id, film_id
+              SELECT category_id, nomination_id
               FROM category_winners
               WHERE year = ?
             ),
             user_scores AS (
               SELECT
                 up.user_key AS user_key,
-                SUM(CASE WHEN up.film_id = wc.film_id THEN 1 ELSE 0 END) AS correct
+                SUM(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
               FROM user_picks up
               JOIN winner_categories wc ON wc.category_id = up.category_id
               WHERE up.year = ?
@@ -2694,7 +2704,8 @@ class OscarHandler(SimpleHTTPRequestHandler):
         self._json(
             {
                 'seenFilmIds': [row['film_id'] for row in rows],
-                'picksByCategory': {row['category']: row['filmId'] for row in picks},
+                'picksByCategory': {row['category']: row['nominationId'] for row in picks},
+                'repickCategories': [row['category'] for row in unresolved_repick_rows],
                 'performance': {
                     'viewingBetterThanPercent': viewing_better_than_percent,
                     'viewingComparedUserCount': viewing_total_others,
@@ -2747,11 +2758,16 @@ class OscarHandler(SimpleHTTPRequestHandler):
         user_key = body.get('userKey') or DEFAULT_USER_KEY
         category_name = body.get('category')
         film_id = body.get('filmId')
+        nomination_id = body.get('nominationId')
         picked = bool(body.get('picked'))
         category_id = self._category_id(year, category_name)
 
         if not category_id:
             self._json({'ok': False, 'error': 'Unknown category'}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if nomination_id in (None, ''):
+            self._json({'ok': False, 'error': 'nominationId is required'}, status=HTTPStatus.BAD_REQUEST)
             return
 
         conn = connect()
@@ -2767,24 +2783,42 @@ class OscarHandler(SimpleHTTPRequestHandler):
             )
             return
 
+        nomination_row = conn.execute(
+            '''
+            SELECT film_id
+            FROM nominations
+            WHERE id = ? AND year = ? AND category_id = ?
+            ''',
+            (nomination_id, year, category_id),
+        ).fetchone()
+        if not nomination_row:
+            conn.close()
+            self._json(
+                {'ok': False, 'error': 'Unknown nominee'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+            return
+        film_id = nomination_row['film_id']
+
         if picked:
             conn.execute(
                 '''
-                INSERT INTO user_picks(user_key, year, category_id, film_id)
-                VALUES(?, ?, ?, ?)
+                INSERT INTO user_picks(user_key, year, category_id, film_id, nomination_id)
+                VALUES(?, ?, ?, ?, ?)
                 ON CONFLICT(user_key, year, category_id) DO UPDATE SET
                   film_id=excluded.film_id,
+                  nomination_id=excluded.nomination_id,
                   updated_at=CURRENT_TIMESTAMP
                 ''',
-                (user_key, year, category_id, film_id),
+                (user_key, year, category_id, film_id, nomination_id),
             )
         else:
             conn.execute(
                 '''
                 DELETE FROM user_picks
-                WHERE user_key = ? AND year = ? AND category_id = ? AND film_id = ?
+                WHERE user_key = ? AND year = ? AND category_id = ? AND nomination_id = ?
                 ''',
-                (user_key, year, category_id, film_id),
+                (user_key, year, category_id, nomination_id),
             )
         conn.commit()
         conn.close()
@@ -3029,6 +3063,7 @@ class OscarHandler(SimpleHTTPRequestHandler):
         year = int(body.get('year'))
         category_name = body.get('category')
         film_id = body.get('filmId')
+        nomination_id = body.get('nominationId')
         winner = bool(body.get('winner'))
         category_id = self._category_id(year, category_name)
 
@@ -3042,25 +3077,43 @@ class OscarHandler(SimpleHTTPRequestHandler):
             self._json({'ok': False, 'error': 'Unknown category'}, status=HTTPStatus.BAD_REQUEST)
             return
 
+        if nomination_id in (None, ''):
+            self._json({'ok': False, 'error': 'nominationId is required'}, status=HTTPStatus.BAD_REQUEST)
+            return
+
         conn = connect()
+        nomination_row = conn.execute(
+            '''
+            SELECT film_id
+            FROM nominations
+            WHERE id = ? AND year = ? AND category_id = ?
+            ''',
+            (nomination_id, year, category_id),
+        ).fetchone()
+        if not nomination_row:
+            conn.close()
+            self._json({'ok': False, 'error': 'Unknown nominee'}, status=HTTPStatus.BAD_REQUEST)
+            return
+        film_id = nomination_row['film_id']
         if winner:
             conn.execute(
                 '''
-                INSERT INTO category_winners(year, category_id, film_id)
-                VALUES(?, ?, ?)
+                INSERT INTO category_winners(year, category_id, film_id, nomination_id)
+                VALUES(?, ?, ?, ?)
                 ON CONFLICT(year, category_id) DO UPDATE SET
                   film_id=excluded.film_id,
+                  nomination_id=excluded.nomination_id,
                   updated_at=CURRENT_TIMESTAMP
                 ''',
-                (year, category_id, film_id),
+                (year, category_id, film_id, nomination_id),
             )
         else:
             conn.execute(
                 '''
                 DELETE FROM category_winners
-                WHERE year = ? AND category_id = ? AND film_id = ?
+                WHERE year = ? AND category_id = ? AND nomination_id = ?
                 ''',
-                (year, category_id, film_id),
+                (year, category_id, nomination_id),
         )
         conn.commit()
         conn.close()

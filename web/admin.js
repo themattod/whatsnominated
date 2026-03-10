@@ -291,15 +291,19 @@ const alphabeticalCategoryNames = () =>
 const nominationMaps = () => {
   const nomineeByFilmAndCategory = new Map();
   const categoryFilmIds = new Map();
+  const categoryNominations = new Map();
 
   for (const nomination of state.nominations) {
     nomineeByFilmAndCategory.set(`${nomination.filmId}::${nomination.category}`, nomination.nominee || '');
     const filmIds = categoryFilmIds.get(nomination.category) || [];
     filmIds.push(nomination.filmId);
     categoryFilmIds.set(nomination.category, filmIds);
+    const nominations = categoryNominations.get(nomination.category) || [];
+    nominations.push(nomination);
+    categoryNominations.set(nomination.category, nominations);
   }
 
-  return { nomineeByFilmAndCategory, categoryFilmIds };
+  return { nomineeByFilmAndCategory, categoryFilmIds, categoryNominations };
 };
 
 const buildBallotJumpOptions = () => {
@@ -582,8 +586,8 @@ const renderFilms = () => {
     heading.className = 'ballot-category-title';
     heading.textContent = categoryName;
 
-    const winnerFilmId = state.winnersByCategory?.[categoryName];
-    const hasWinner = Boolean(winnerFilmId);
+    const winnerNominationId = Number(state.winnersByCategory?.[categoryName] || 0);
+    const hasWinner = Boolean(winnerNominationId);
     categoryMeta.append(heading);
     if (isLiveMode) {
       const status = document.createElement('span');
@@ -605,8 +609,21 @@ const renderFilms = () => {
       .map((filmId) => filmsById.get(filmId))
       .filter(Boolean)
       .sort((a, b) => a.title.localeCompare(b.title));
+    const liveNominations = (maps.categoryNominations.get(categoryName) || [])
+      .map((nomination) => ({
+        ...nomination,
+        film: filmsById.get(nomination.filmId),
+      }))
+      .filter((nomination) => nomination.film)
+      .sort((a, b) => {
+        const byTitle = a.film.title.localeCompare(b.film.title);
+        if (byTitle !== 0) {
+          return byTitle;
+        }
+        return String(a.nominee || '').localeCompare(String(b.nominee || ''));
+      });
 
-    if (films.length === 0) {
+    if ((isLiveMode ? liveNominations.length : films.length) === 0) {
       const empty = document.createElement('p');
       empty.className = 'ballot-empty';
       empty.textContent = 'No films in this category.';
@@ -622,7 +639,13 @@ const renderFilms = () => {
       section.append(liveGrid);
     }
 
-    for (const film of films) {
+    for (const film of (isLiveMode
+      ? liveNominations.map((nomination) => ({
+          ...nomination.film,
+          nominationId: nomination.nominationId,
+          nominee: nomination.nominee,
+        }))
+      : films)) {
       if (isFilmMode) {
         const card = document.createElement('article');
         card.className = 'film-card ballot-card admin-ballot-card admin-film-card';
@@ -686,21 +709,22 @@ const renderFilms = () => {
       winnerButton.dataset.action = 'winner-button';
       winnerButton.dataset.category = categoryName;
       winnerButton.dataset.filmId = film.id;
-      winnerButton.setAttribute('aria-pressed', winnerFilmId === film.id ? 'true' : 'false');
+      winnerButton.dataset.nominationId = String(film.nominationId || '');
+      winnerButton.setAttribute('aria-pressed', winnerNominationId === Number(film.nominationId || 0) ? 'true' : 'false');
 
       const title = document.createElement('span');
       title.className = 'admin-live-winner-option-title';
       title.textContent = film.title;
 
-      const nominee = maps.nomineeByFilmAndCategory.get(`${film.id}::${categoryName}`) || '';
+      const nominee = film.nominee || maps.nomineeByFilmAndCategory.get(`${film.id}::${categoryName}`) || '';
       const meta = document.createElement('span');
       meta.className = 'admin-live-winner-option-meta';
       meta.textContent = nominee || 'Nominee details unavailable.';
 
       const stateLabel = document.createElement('span');
       stateLabel.className = 'admin-live-winner-option-state';
-      stateLabel.textContent = winnerFilmId === film.id ? 'Winner 🏆' : '';
-      stateLabel.hidden = winnerFilmId !== film.id;
+      stateLabel.textContent = winnerNominationId === Number(film.nominationId || 0) ? 'Winner 🏆' : '';
+      stateLabel.hidden = winnerNominationId !== Number(film.nominationId || 0);
 
       winnerButton.append(title, meta, stateLabel);
       liveGrid.append(winnerButton);
@@ -766,11 +790,11 @@ const updateVotingLock = async (enabled) => {
   });
 };
 
-const updateWinner = async (category, filmId, winner) => {
+const updateWinner = async (category, filmId, nominationId, winner) => {
   await api('/api/admin/winner', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ year: state.year, category, filmId, winner })
+    body: JSON.stringify({ year: state.year, category, filmId, nominationId, winner })
   });
 };
 
@@ -923,8 +947,14 @@ const wireEvents = () => {
       eventModeSaveStatusTimer = null;
     }
     try {
-      for (const [category, filmId] of entries) {
-        await updateWinner(category, filmId, false);
+      for (const [category, nominationId] of entries) {
+        const nomination = state.nominations.find(
+          (item) => Number(item.nominationId || 0) === Number(nominationId || 0) && item.category === category
+        );
+        if (!nomination) {
+          continue;
+        }
+        await updateWinner(category, nomination.filmId, nomination.nominationId, false);
       }
       await loadNominees();
       await loadDashboardSafe();
@@ -1071,10 +1101,11 @@ const wireEvents = () => {
   const handleWinnerUpdate = async (control) => {
     const category = control.dataset.category;
     const filmId = control.dataset.filmId;
-    const currentlyWinner = state.winnersByCategory?.[category] === filmId;
+    const nominationId = Number(control.dataset.nominationId || 0);
+    const currentlyWinner = Number(state.winnersByCategory?.[category] || 0) === nominationId;
     const nextWinner = !currentlyWinner;
     try {
-      await updateWinner(category, filmId, nextWinner);
+      await updateWinner(category, filmId, nominationId, nextWinner);
       await loadNominees();
       await loadDashboardSafe();
       renderFilms();
