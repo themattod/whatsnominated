@@ -46,6 +46,11 @@ const state = {
   picksByCategory: {},
   seenFilmIds: new Set(),
   performance: {
+    viewingBetterThanPercent: 0,
+    viewingComparedUserCount: 0,
+    viewingRankPosition: 1,
+    viewingRankedUserCount: 0,
+    viewingTiedUserCount: 1,
     winnerCategoryCount: 0,
     userCorrectCount: 0,
     betterThanPercent: 0,
@@ -60,6 +65,7 @@ const state = {
   seenOnlyFilter: false,
   unseenOnlyFilter: false,
   sort: 'title',
+  metricMode: 'viewing',
   banner: {
     enabled: true,
     text: ''
@@ -82,6 +88,8 @@ const loadUserPrefs = () => {
   }
 };
 
+const hasStoredUserPrefs = () => Boolean(localStorage.getItem(USER_PREFS_KEY));
+
 const saveUserPrefs = () => {
   localStorage.setItem(
     USER_PREFS_KEY,
@@ -92,12 +100,15 @@ const saveUserPrefs = () => {
       groupAllCategories: state.groupAllCategories,
       seenOnlyFilter: state.seenOnlyFilter,
       unseenOnlyFilter: state.unseenOnlyFilter,
-      sort: state.sort
+      sort: state.sort,
+      metricMode: state.metricMode
     })
   );
 };
 
 const userPrefs = loadUserPrefs();
+const storedUserPrefsExist = hasStoredUserPrefs();
+let metricModeExplicit = userPrefs.metricMode === 'viewing' || userPrefs.metricMode === 'picks';
 if (typeof userPrefs.year === 'number') {
   state.year = userPrefs.year;
 }
@@ -119,12 +130,20 @@ if (typeof userPrefs.unseenOnlyFilter === 'boolean') {
 if (userPrefs.sort === 'title' || userPrefs.sort === 'nominations') {
   state.sort = userPrefs.sort;
 }
+if (userPrefs.metricMode === 'viewing' || userPrefs.metricMode === 'picks') {
+  state.metricMode = userPrefs.metricMode;
+}
 if (!Array.isArray(userPrefs.categoryFilters) && typeof userPrefs.category === 'string') {
   if (userPrefs.category !== ALL_CATEGORIES) {
     state.categoryFilters = [userPrefs.category];
   } else {
     state.categoryFilters = [];
   }
+}
+if (!storedUserPrefsExist) {
+  state.category = ALL_CATEGORIES;
+  state.categoryFilters = [];
+  state.groupAllCategories = true;
 }
 
 const localPickKey = (year, userKey) => `oscars:picks:${year}:${userKey}`;
@@ -166,6 +185,8 @@ const pickProgressWrap = document.getElementById('pickProgressWrap');
 const pickProgressLabel = document.getElementById('pickProgressLabel');
 const pickProgressCount = document.getElementById('pickProgressCount');
 const pickProgressFill = document.getElementById('pickProgressFill');
+const metricsToggle = document.getElementById('metricsToggle');
+const metricModeButtons = [...document.querySelectorAll('[data-metric-mode]')];
 const compareProgressWrap = document.getElementById('compareProgressWrap');
 const compareProgressLabel = document.getElementById('compareProgressLabel');
 const compareProgressCount = document.getElementById('compareProgressCount');
@@ -255,6 +276,11 @@ const loadSeen = async () => {
   state.seenFilmIds = new Set(payload.seenFilmIds || []);
   state.picksByCategory = { ...loadLocalPicks(), ...(payload.picksByCategory || {}) };
   state.performance = payload.performance || {
+    viewingBetterThanPercent: 0,
+    viewingComparedUserCount: 0,
+    viewingRankPosition: 1,
+    viewingRankedUserCount: 0,
+    viewingTiedUserCount: 1,
     winnerCategoryCount: 0,
     userCorrectCount: 0,
     betterThanPercent: 0,
@@ -474,6 +500,41 @@ const renderProgress = () => {
   seenProgressCount.textContent = `${seen} / ${total}`;
   seenProgressFill.style.width = `${percent}%`;
 
+  const activeMetricMode = state.eventMode
+    ? (metricModeExplicit ? state.metricMode : 'picks')
+    : 'viewing';
+  metricsToggle.hidden = !state.eventMode;
+  for (const button of metricModeButtons) {
+    const active = button.dataset.metricMode === activeMetricMode;
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  }
+
+  const renderViewingComparison = () => {
+    if (seen > 0) {
+      const viewingPercent = Math.max(
+        0,
+        Math.min(100, Number(state.performance?.viewingBetterThanPercent || 0))
+      );
+      const viewingRankPosition = Number(state.performance?.viewingRankPosition || 1);
+      const viewingRankedUserCount = Number(state.performance?.viewingRankedUserCount || 0);
+      const viewingTiedUserCount = Number(state.performance?.viewingTiedUserCount || 1);
+      compareProgressWrap.hidden = false;
+      compareProgressLabel.textContent = `You’ve seen more than ${viewingPercent}% of users`;
+      compareProgressCount.textContent = viewingTiedUserCount > 1
+        ? `Tied #${viewingRankPosition}/${Math.max(viewingRankedUserCount, 1)}`
+        : `Rank #${viewingRankPosition}/${Math.max(viewingRankedUserCount, 1)}`;
+      compareProgressFill.style.width = `${viewingPercent}%`;
+    } else {
+      compareProgressWrap.hidden = true;
+    }
+  };
+
+  if (activeMetricMode === 'viewing') {
+    pickProgressWrap.hidden = true;
+    renderViewingComparison();
+    return;
+  }
+
   const winnerEntries = Object.entries(state.winnersByCategory || {});
   if (winnerEntries.length === 0) {
     pickProgressWrap.hidden = true;
@@ -505,6 +566,7 @@ const renderProgress = () => {
     : `Rank #${rankPosition} of ${Math.max(rankedUserCount, 1)} Users`;
   compareProgressCount.textContent = 'Leaderboard';
   compareProgressFill.style.width = `${Math.max(0, Math.min(100, normalizedRank))}%`;
+
 };
 
 const renderFilms = () => {
@@ -704,6 +766,19 @@ const wireEvents = () => {
     state.sort = sortSelect.value;
     saveUserPrefs();
     renderFilms();
+  });
+
+  metricModeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const nextMode = button.dataset.metricMode;
+      if (nextMode !== 'viewing' && nextMode !== 'picks') {
+        return;
+      }
+      state.metricMode = nextMode;
+      metricModeExplicit = true;
+      saveUserPrefs();
+      renderProgress();
+    });
   });
 
   filmList.addEventListener('click', async (event) => {

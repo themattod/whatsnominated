@@ -17,7 +17,7 @@
           <div class="brand-copy">
             <p class="eyebrow">Admin</p>
             <h1>WhatsNominated</h1>
-            <p class="subtitle">Manage links and poster overrides for each nominated film.</p>
+            <p class="subtitle">Manage global settings, films, live controls, and pool tools.</p>
           </div>
         </div>
         <div class="admin-header-actions">
@@ -26,77 +26,109 @@
         </div>
       </header>
 
-      <section class="admin-sticky-controls" aria-label="Voting controls">
-        <div class="control-card banner-sticky-card">
-          <p class="control-title">BANNER CONTROLS</p>
-          <form id="bannerForm" class="banner-form banner-form-inline">
-            <div class="banner-actions">
-              <button type="button" id="bannerEnabledButton" aria-pressed="true">Banner Enabled</button>
-              <button type="submit" id="bannerSaveButton">Save Banner</button>
+      <div class="admin-workspace">
+        <aside class="control-card admin-sidebar-nav" aria-label="Admin sections">
+          <p class="control-title">Admin Menu</p>
+          <div class="admin-sidebar-menu">
+            <button type="button" class="admin-nav-button" data-section="global">Global Controls</button>
+            <button type="button" class="admin-nav-button" data-section="film">Film Controls</button>
+            <button type="button" class="admin-nav-button" data-section="live">Live Controls</button>
+            <button type="button" class="admin-nav-button" data-section="pool">Pool Controls</button>
+          </div>
+        </aside>
+
+        <section class="admin-main-content">
+          <section id="adminGlobalSection" class="admin-section-panel">
+            <div class="control-card">
+              <p class="control-title">Dashboard</p>
+              <dl id="adminDashboard" class="admin-dashboard">
+                <div><dt>Unique Users</dt><dd id="dashUniqueUsers">0</dd></div>
+                <div><dt>Users Compared</dt><dd id="dashUsersCompared">0</dd></div>
+                <div><dt>Total Picks</dt><dd id="dashTotalPicks">0</dd></div>
+                <div><dt>Winner Categories</dt><dd id="dashWinnerCategories">0</dd></div>
+              </dl>
             </div>
-            <textarea id="bannerText" rows="2" placeholder="Banner text" aria-label="Banner text"></textarea>
-            <p id="bannerSaveStatus" class="banner-save-status" aria-live="polite"></p>
-          </form>
-        </div>
-        <div class="control-card voting-controls-card">
-          <p class="control-title">VOTING CONTROLS</p>
-          <div class="admin-mode-actions">
-            <button type="button" id="votingLockHeaderButton">Lock Voting</button>
-            <button type="button" id="eventModeHeaderButton">Enable Live Mode</button>
-            <button type="button" id="clearWinnersButton" disabled>Clear Winners</button>
-            <p id="eventModeSaveStatus" class="banner-save-status" aria-live="polite"></p>
-          </div>
-        </div>
-      </section>
+            <div class="control-card banner-sticky-card">
+              <p class="control-title">Banner Controls</p>
+              <form id="bannerForm" class="banner-form banner-form-inline">
+                <div class="banner-actions">
+                  <button type="button" id="bannerEnabledButton" aria-pressed="true">Banner Enabled</button>
+                  <button type="submit" id="bannerSaveButton">Save Banner</button>
+                </div>
+                <textarea id="bannerText" rows="2" placeholder="Banner text" aria-label="Banner text"></textarea>
+                <p id="bannerSaveStatus" class="banner-save-status" aria-live="polite"></p>
+              </form>
+            </div>
+          </section>
 
-      <section class="controls" aria-label="Admin filters and controls">
-        <div class="control-card">
-          <p class="control-title">Dashboard</p>
-          <dl id="adminDashboard" class="admin-dashboard">
-            <div><dt>Unique Users</dt><dd id="dashUniqueUsers">0</dd></div>
-            <div><dt>Users Compared</dt><dd id="dashUsersCompared">0</dd></div>
-            <div><dt>Total Picks</dt><dd id="dashTotalPicks">0</dd></div>
-            <div><dt>Winner Categories</dt><dd id="dashWinnerCategories">0</dd></div>
-          </dl>
-        </div>
-        <div class="control-card">
-          <p class="control-title">Browse</p>
-          <div class="control-grid ballot-grid">
-            <label id="yearControl">
-              Year
-              <select id="yearSelect"></select>
-            </label>
+          <section id="adminFilmSection" class="admin-section-panel" hidden>
+            <div class="control-card">
+              <p class="control-title">Browse Films</p>
+              <div class="control-grid ballot-grid">
+                <label id="yearControl">
+                  Year
+                  <select id="yearSelect"></select>
+                </label>
 
-            <label>
-              Jump to Category
-              <select id="ballotJumpSelect"></select>
-            </label>
-          </div>
-        </div>
-      </section>
+                <label>
+                  Jump to Category
+                  <select id="ballotJumpSelect"></select>
+                </label>
+              </div>
+            </div>
+            <section class="stats" id="stats"></section>
+            <section id="filmList" class="film-list" aria-live="polite"></section>
+          </section>
 
-      <section class="controls" aria-label="Pool troubleshooting">
-        <div class="control-card">
-          <p class="control-title">Pool Troubleshooting</p>
-          <form id="poolTroubleshootForm" class="pools-row">
-            <label class="compact">
-              Pool ID
-              <input id="poolTroubleshootPoolId" type="text" placeholder="Exact pool id" />
-            </label>
-            <label class="compact">
-              User Email
-              <input id="poolTroubleshootUserEmail" type="email" placeholder="member@example.com" />
-            </label>
-            <button type="submit">Search Pools</button>
-            <button type="button" id="poolTroubleshootReset">Reset</button>
-          </form>
-          <p id="poolTroubleshootStatus" class="banner-save-status" aria-live="polite"></p>
-          <div id="poolTroubleshootResults"></div>
-        </div>
-      </section>
+          <section id="adminLiveSection" class="admin-section-panel" hidden>
+            <div class="control-card voting-controls-card">
+              <p class="control-title">Voting Controls</p>
+              <div class="admin-mode-actions">
+                <button type="button" id="votingLockHeaderButton">Lock Voting</button>
+                <button type="button" id="eventModeHeaderButton">Enable Live Mode</button>
+                <button type="button" id="clearWinnersButton" disabled>Clear Winners</button>
+                <p id="eventModeSaveStatus" class="banner-save-status" aria-live="polite"></p>
+              </div>
+            </div>
+            <div class="control-card">
+              <p class="control-title">Browse Categories</p>
+              <div class="control-grid ballot-grid">
+                <label id="yearControlLive">
+                  Year
+                  <select id="yearSelectLive"></select>
+                </label>
 
-      <section class="stats" id="stats"></section>
-      <section id="filmList" class="film-list" aria-live="polite"></section>
+                <label>
+                  Jump to Category
+                  <select id="ballotJumpSelectLive"></select>
+                </label>
+              </div>
+            </div>
+            <section class="stats" id="liveStats"></section>
+            <section id="liveFilmList" class="film-list" aria-live="polite"></section>
+          </section>
+
+          <section id="adminPoolSection" class="admin-section-panel" hidden>
+            <div class="control-card">
+              <p class="control-title">Pool Troubleshooting</p>
+              <form id="poolTroubleshootForm" class="pools-row">
+                <label class="compact">
+                  Pool ID
+                  <input id="poolTroubleshootPoolId" type="text" placeholder="Exact pool id" />
+                </label>
+                <label class="compact">
+                  User Email
+                  <input id="poolTroubleshootUserEmail" type="email" placeholder="member@example.com" />
+                </label>
+                <button type="submit">Search Pools</button>
+                <button type="button" id="poolTroubleshootReset">Reset</button>
+              </form>
+              <p id="poolTroubleshootStatus" class="banner-save-status" aria-live="polite"></p>
+              <div id="poolTroubleshootResults"></div>
+            </div>
+          </section>
+        </section>
+      </div>
     </main>
 
     <template id="adminFormTemplate">

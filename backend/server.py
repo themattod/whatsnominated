@@ -2543,6 +2543,68 @@ class OscarHandler(SimpleHTTPRequestHandler):
             ''',
             (year, user_key),
         ).fetchall()
+        user_seen_count = len(rows)
+
+        viewing_vs_others = conn.execute(
+            '''
+            WITH viewer_scores AS (
+              SELECT
+                us.user_key AS user_key,
+                COUNT(*) AS seen_count
+              FROM user_seen us
+              WHERE us.year = ? AND us.seen = 1
+              GROUP BY us.user_key
+            )
+            SELECT
+              SUM(CASE WHEN seen_count < ? THEN 1 ELSE 0 END) AS beaten,
+              COUNT(*) AS total_others
+            FROM viewer_scores
+            WHERE user_key <> ?
+            ''',
+            (year, user_seen_count, user_key),
+        ).fetchone()
+        viewing_beaten = viewing_vs_others['beaten'] if viewing_vs_others else 0
+        viewing_total_others = viewing_vs_others['total_others'] if viewing_vs_others else 0
+        viewing_better_than_percent = (
+            round((viewing_beaten / viewing_total_others) * 100) if viewing_total_others else 0
+        )
+
+        viewing_rank_row = conn.execute(
+            '''
+            WITH viewer_scores AS (
+              SELECT
+                us.user_key AS user_key,
+                COUNT(*) AS seen_count
+              FROM user_seen us
+              WHERE us.year = ? AND us.seen = 1
+              GROUP BY us.user_key
+            ),
+            current_score AS (
+              SELECT COALESCE(
+                (SELECT seen_count FROM viewer_scores WHERE user_key = ?),
+                0
+              ) AS seen_count
+            )
+            SELECT
+              1 + COALESCE(SUM(CASE WHEN vs.seen_count > (SELECT seen_count FROM current_score) THEN 1 ELSE 0 END), 0) AS rank_position,
+              COUNT(*) AS ranked_user_count,
+              COALESCE(SUM(CASE WHEN vs.seen_count = (SELECT seen_count FROM current_score) THEN 1 ELSE 0 END), 0) AS tied_user_count
+            FROM viewer_scores vs
+            '''
+            ,
+            (year, user_key),
+        ).fetchone()
+        viewing_rank_position = (
+            viewing_rank_row['rank_position']
+            if viewing_rank_row and viewing_rank_row['ranked_user_count']
+            else 1
+        )
+        viewing_ranked_user_count = viewing_rank_row['ranked_user_count'] if viewing_rank_row else 0
+        viewing_tied_user_count = (
+            viewing_rank_row['tied_user_count']
+            if viewing_rank_row and viewing_rank_row['ranked_user_count']
+            else 1
+        )
 
         winner_count_row = conn.execute(
             'SELECT COUNT(*) AS count FROM category_winners WHERE year = ?',
@@ -2634,6 +2696,11 @@ class OscarHandler(SimpleHTTPRequestHandler):
                 'seenFilmIds': [row['film_id'] for row in rows],
                 'picksByCategory': {row['category']: row['filmId'] for row in picks},
                 'performance': {
+                    'viewingBetterThanPercent': viewing_better_than_percent,
+                    'viewingComparedUserCount': viewing_total_others,
+                    'viewingRankPosition': viewing_rank_position,
+                    'viewingRankedUserCount': viewing_ranked_user_count,
+                    'viewingTiedUserCount': viewing_tied_user_count,
                     'winnerCategoryCount': winner_count,
                     'userCorrectCount': user_correct,
                     'betterThanPercent': better_than_percent,
