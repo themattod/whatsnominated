@@ -23,6 +23,7 @@ def main():
             'INSERT INTO nominations(year, category_id, film_id, nominee) VALUES(2026, ?, ?, ?)',
             (category_id, 'FilmA', 'Producer A'),
         )
+        nomination_a_id = int(cur.lastrowid)
         cur.execute(
             'INSERT INTO nominations(year, category_id, film_id, nominee) VALUES(2026, ?, ?, ?)',
             (category_id, 'FilmB', 'Producer B'),
@@ -108,8 +109,8 @@ def main():
 
         # Winner is FilmA.
         cur.execute(
-            'INSERT INTO category_winners(year, category_id, film_id) VALUES(2026, ?, ?)',
-            (category_id, 'FilmA'),
+            'INSERT INTO category_winners(year, category_id, film_id, nomination_id) VALUES(2026, ?, ?, ?)',
+            (category_id, 'FilmA', nomination_a_id),
         )
         conn.commit()
 

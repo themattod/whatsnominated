@@ -870,17 +870,16 @@ def recompute_pool_scores(conn, pool_id):
     if not pool:
         raise PoolNotFoundError('Pool not found.')
     year = int(pool['year'])
-    winner_by_category = {
-        int(r['category_id']): r['film_id']
-        for r in conn.execute(
-            '''
-            SELECT category_id, film_id
-            FROM category_winners
-            WHERE year = ?
-            ''',
-            (year,),
-        ).fetchall()
-    }
+    winner_by_category = {}
+    for row in conn.execute(
+        '''
+        SELECT DISTINCT category_id, film_id
+        FROM category_winners
+        WHERE year = ?
+        ''',
+        (year,),
+    ).fetchall():
+        winner_by_category.setdefault(int(row['category_id']), set()).add(row['film_id'])
 
     submission_rows = conn.execute(
         '''
@@ -933,8 +932,8 @@ def recompute_pool_scores(conn, pool_id):
         for pick in picks:
             category_id = int(pick['category_id'])
             picked_film_id = pick['film_id']
-            winner_film_id = winner_by_category.get(category_id)
-            is_correct = 1 if winner_film_id and picked_film_id == winner_film_id else 0
+            winner_film_ids = winner_by_category.get(category_id, set())
+            is_correct = 1 if winner_film_ids and picked_film_id in winner_film_ids else 0
             points_possible = float(pick['points_possible_snapshot'])
             if submission['scoring_mode_snapshot'] == 'odds_weighted':
                 points_possible = float(submission_odds.get((category_id, picked_film_id), points_possible))
@@ -952,7 +951,7 @@ def recompute_pool_scores(conn, pool_id):
                     submission['id'],
                     category_id,
                     picked_film_id,
-                    winner_film_id,
+                    (picked_film_id if is_correct else (sorted(winner_film_ids)[0] if winner_film_ids else None)),
                     is_correct,
                     awarded,
                 ),

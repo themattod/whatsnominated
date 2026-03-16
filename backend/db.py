@@ -93,8 +93,9 @@ def init_db(db_path=None):
           year INTEGER NOT NULL REFERENCES years(year) ON DELETE CASCADE,
           category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
           film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+          nomination_id INTEGER NOT NULL REFERENCES nominations(id) ON DELETE CASCADE,
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-          PRIMARY KEY(year, category_id)
+          PRIMARY KEY(year, category_id, nomination_id)
         );
 
         CREATE TABLE IF NOT EXISTS admin_watch_links (
@@ -533,6 +534,28 @@ def init_db(db_path=None):
         CREATE INDEX IF NOT EXISTS idx_category_winners_nomination_id ON category_winners(nomination_id);
         '''
     )
+    category_winner_info = cur.execute("PRAGMA table_info(category_winners)").fetchall()
+    category_winner_pk = [row[1] for row in category_winner_info if row[5] > 0]
+    if category_winner_pk == ['year', 'category_id']:
+        cur.executescript(
+            '''
+            CREATE TABLE IF NOT EXISTS category_winners__new (
+              year INTEGER NOT NULL REFERENCES years(year) ON DELETE CASCADE,
+              category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+              film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+              nomination_id INTEGER NOT NULL REFERENCES nominations(id) ON DELETE CASCADE,
+              updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY(year, category_id, nomination_id)
+            );
+            INSERT OR IGNORE INTO category_winners__new(year, category_id, film_id, nomination_id, updated_at)
+            SELECT year, category_id, film_id, nomination_id, updated_at
+            FROM category_winners
+            WHERE nomination_id IS NOT NULL;
+            DROP TABLE category_winners;
+            ALTER TABLE category_winners__new RENAME TO category_winners;
+            CREATE INDEX IF NOT EXISTS idx_category_winners_nomination_id ON category_winners(nomination_id);
+            '''
+        )
     supporting_roles_reset_key = 'migration:2026-supporting-roles-repick-v2'
     reset_marker = cur.execute(
         'SELECT value FROM system_flags WHERE key = ?',

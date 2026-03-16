@@ -524,10 +524,14 @@ const renderSectionVisibility = () => {
 const renderStats = () => {
   const categoryCount = state.categories.length;
   const nominationCount = state.nominations.length;
-  const winnerCount = Object.keys(state.winnersByCategory || {}).length;
+  const winnerCount = Object.values(state.winnersByCategory || {}).reduce(
+    (sum, nominationIds) => sum + (Array.isArray(nominationIds) ? nominationIds.length : 0),
+    0,
+  );
+  const winnerCategoryCount = Object.keys(state.winnersByCategory || {}).length;
   const message =
     state.activeSection === 'live'
-      ? `${winnerCount} winner${winnerCount === 1 ? '' : 's'} assigned across ${categoryCount} categories.`
+      ? `${winnerCount} winner${winnerCount === 1 ? '' : 's'} assigned across ${winnerCategoryCount} categor${winnerCategoryCount === 1 ? 'y' : 'ies'}.`
       : `Managing ${nominationCount} nomination${nominationCount === 1 ? '' : 's'} across ${categoryCount} categories.`;
   if (stats) {
     stats.textContent = message;
@@ -586,8 +590,8 @@ const renderFilms = () => {
     heading.className = 'ballot-category-title';
     heading.textContent = categoryName;
 
-    const winnerNominationId = Number(state.winnersByCategory?.[categoryName] || 0);
-    const hasWinner = Boolean(winnerNominationId);
+    const winnerNominationIds = (state.winnersByCategory?.[categoryName] || []).map(Number);
+    const hasWinner = winnerNominationIds.length > 0;
     categoryMeta.append(heading);
     if (isLiveMode) {
       const status = document.createElement('span');
@@ -710,7 +714,7 @@ const renderFilms = () => {
       winnerButton.dataset.category = categoryName;
       winnerButton.dataset.filmId = film.id;
       winnerButton.dataset.nominationId = String(film.nominationId || '');
-      winnerButton.setAttribute('aria-pressed', winnerNominationId === Number(film.nominationId || 0) ? 'true' : 'false');
+      winnerButton.setAttribute('aria-pressed', winnerNominationIds.includes(Number(film.nominationId || 0)) ? 'true' : 'false');
 
       const title = document.createElement('span');
       title.className = 'admin-live-winner-option-title';
@@ -723,8 +727,8 @@ const renderFilms = () => {
 
       const stateLabel = document.createElement('span');
       stateLabel.className = 'admin-live-winner-option-state';
-      stateLabel.textContent = winnerNominationId === Number(film.nominationId || 0) ? 'Winner 🏆' : '';
-      stateLabel.hidden = winnerNominationId !== Number(film.nominationId || 0);
+      stateLabel.textContent = winnerNominationIds.includes(Number(film.nominationId || 0)) ? 'Winner 🏆' : '';
+      stateLabel.hidden = !winnerNominationIds.includes(Number(film.nominationId || 0));
 
       winnerButton.append(title, meta, stateLabel);
       liveGrid.append(winnerButton);
@@ -947,14 +951,16 @@ const wireEvents = () => {
       eventModeSaveStatusTimer = null;
     }
     try {
-      for (const [category, nominationId] of entries) {
-        const nomination = state.nominations.find(
-          (item) => Number(item.nominationId || 0) === Number(nominationId || 0) && item.category === category
-        );
-        if (!nomination) {
-          continue;
+      for (const [category, nominationIds] of entries) {
+        for (const nominationId of nominationIds || []) {
+          const nomination = state.nominations.find(
+            (item) => Number(item.nominationId || 0) === Number(nominationId || 0) && item.category === category
+          );
+          if (!nomination) {
+            continue;
+          }
+          await updateWinner(category, nomination.filmId, nomination.nominationId, false);
         }
-        await updateWinner(category, nomination.filmId, nomination.nominationId, false);
       }
       await loadNominees();
       await loadDashboardSafe();
@@ -1102,7 +1108,8 @@ const wireEvents = () => {
     const category = control.dataset.category;
     const filmId = control.dataset.filmId;
     const nominationId = Number(control.dataset.nominationId || 0);
-    const currentlyWinner = Number(state.winnersByCategory?.[category] || 0) === nominationId;
+    const winnerNominationIds = (state.winnersByCategory?.[category] || []).map(Number);
+    const currentlyWinner = winnerNominationIds.includes(nominationId);
     const nextWinner = !currentlyWinner;
     try {
       await updateWinner(category, filmId, nominationId, nextWinner);

@@ -87,6 +87,15 @@ def slugify_title(title):
     return slug
 
 
+def _group_winner_nomination_ids(rows):
+    grouped = {}
+    for row in rows:
+        category = row['category']
+        nomination_id = int(row['nominationId'])
+        grouped.setdefault(category, []).append(nomination_id)
+    return grouped
+
+
 class OscarHandler(SimpleHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     _login_attempts_by_key = {}
@@ -2186,24 +2195,30 @@ class OscarHandler(SimpleHTTPRequestHandler):
             (year,),
         ).fetchone()
         winner_categories_row = conn.execute(
-            'SELECT COUNT(*) AS count FROM category_winners WHERE year = ?',
+            'SELECT COUNT(DISTINCT category_id) AS count FROM category_winners WHERE year = ?',
             (year,),
         ).fetchone()
         user_scores_row = conn.execute(
             '''
             WITH winner_categories AS (
-              SELECT category_id, nomination_id
+              SELECT DISTINCT category_id, nomination_id
               FROM category_winners
               WHERE year = ?
             ),
-            user_scores AS (
+            user_category_scores AS (
               SELECT
                 up.user_key AS user_key,
-                SUM(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
+                up.category_id AS category_id,
+                MAX(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
               FROM user_picks up
               JOIN winner_categories wc ON wc.category_id = up.category_id
               WHERE up.year = ?
-              GROUP BY up.user_key
+              GROUP BY up.user_key, up.category_id
+            ),
+            user_scores AS (
+              SELECT user_key, SUM(correct) AS correct
+              FROM user_category_scores
+              GROUP BY user_key
             )
             SELECT COUNT(*) AS count
             FROM user_scores
@@ -2519,7 +2534,7 @@ class OscarHandler(SimpleHTTPRequestHandler):
             ],
             'films': films,
             'nominations': [dict(row) for row in nominations],
-            'winnersByCategory': {row['category']: row['nominationId'] for row in winners},
+            'winnersByCategory': _group_winner_nomination_ids(winners),
             'eventMode': bool(event_mode['enabled']) if event_mode else False,
             'votingLocked': bool(voting_lock['enabled']) if voting_lock else False,
             'banner': {
@@ -2638,14 +2653,14 @@ class OscarHandler(SimpleHTTPRequestHandler):
             viewing_rank_position = min(viewing_rank_position, viewing_ranked_user_count)
 
         winner_count_row = conn.execute(
-            'SELECT COUNT(*) AS count FROM category_winners WHERE year = ?',
+            'SELECT COUNT(DISTINCT category_id) AS count FROM category_winners WHERE year = ?',
             (year,),
         ).fetchone()
         winner_count = winner_count_row['count'] if winner_count_row else 0
 
         user_correct_row = conn.execute(
             '''
-            SELECT COUNT(*) AS correct
+            SELECT COUNT(DISTINCT up.category_id) AS correct
             FROM user_picks up
             JOIN category_winners cw
               ON cw.year = up.year
@@ -2660,18 +2675,24 @@ class OscarHandler(SimpleHTTPRequestHandler):
         other_scores = conn.execute(
             '''
             WITH winner_categories AS (
-              SELECT category_id, nomination_id
+              SELECT DISTINCT category_id, nomination_id
               FROM category_winners
               WHERE year = ?
             ),
-            user_scores AS (
+            user_category_scores AS (
               SELECT
                 up.user_key AS user_key,
-                SUM(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
+                up.category_id AS category_id,
+                MAX(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
               FROM user_picks up
               JOIN winner_categories wc ON wc.category_id = up.category_id
               WHERE up.year = ?
-              GROUP BY up.user_key
+              GROUP BY up.user_key, up.category_id
+            ),
+            user_scores AS (
+              SELECT user_key, SUM(correct) AS correct
+              FROM user_category_scores
+              GROUP BY user_key
             )
             SELECT
               SUM(CASE WHEN correct < ? THEN 1 ELSE 0 END) AS beaten,
@@ -2690,18 +2711,24 @@ class OscarHandler(SimpleHTTPRequestHandler):
         rank_row = conn.execute(
             '''
             WITH winner_categories AS (
-              SELECT category_id, nomination_id
+              SELECT DISTINCT category_id, nomination_id
               FROM category_winners
               WHERE year = ?
             ),
-            user_scores AS (
+            user_category_scores AS (
               SELECT
                 up.user_key AS user_key,
-                SUM(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
+                up.category_id AS category_id,
+                MAX(CASE WHEN up.nomination_id = wc.nomination_id THEN 1 ELSE 0 END) AS correct
               FROM user_picks up
               JOIN winner_categories wc ON wc.category_id = up.category_id
               WHERE up.year = ?
-              GROUP BY up.user_key
+              GROUP BY up.user_key, up.category_id
+            ),
+            user_scores AS (
+              SELECT user_key, SUM(correct) AS correct
+              FROM user_category_scores
+              GROUP BY user_key
             ),
             current_score AS (
               SELECT COALESCE(
@@ -3130,9 +3157,8 @@ class OscarHandler(SimpleHTTPRequestHandler):
                 '''
                 INSERT INTO category_winners(year, category_id, film_id, nomination_id)
                 VALUES(?, ?, ?, ?)
-                ON CONFLICT(year, category_id) DO UPDATE SET
+                ON CONFLICT(year, category_id, nomination_id) DO UPDATE SET
                   film_id=excluded.film_id,
-                  nomination_id=excluded.nomination_id,
                   updated_at=CURRENT_TIMESTAMP
                 ''',
                 (year, category_id, film_id, nomination_id),

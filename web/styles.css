@@ -912,7 +912,8 @@ select {
 
 .winner-label {
   position: absolute;
-  top: 5.95rem;
+  top: auto;
+  bottom: 0.9rem;
   right: 0.86rem;
   font-size: 1.15rem;
   font-weight: 700;
@@ -1292,7 +1293,7 @@ button:hover {
   }
 
   .user-page .winner-label {
-    top: 7.7rem;
+    bottom: 0.95rem;
   }
 }
 
@@ -1594,8 +1595,13 @@ button:hover {
   }
 
   .winner-label {
-    top: 5.45rem;
+    top: 5.15rem;
+    bottom: auto;
     right: 0.68rem;
+    max-width: 5.2rem;
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.05;
   }
 
   .seen-progress {

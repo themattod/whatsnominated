@@ -627,8 +627,9 @@ const renderProgress = () => {
   }
 
   let correct = 0;
-  for (const [category, winnerNominationId] of winnerEntries) {
-    if (Number(state.picksByCategory?.[category] || 0) === Number(winnerNominationId || 0)) {
+  for (const [category, winnerNominationIds] of winnerEntries) {
+    const pickedNominationId = Number(state.picksByCategory?.[category] || 0);
+    if ((winnerNominationIds || []).map(Number).includes(pickedNominationId)) {
       correct += 1;
     }
   }
@@ -701,10 +702,11 @@ const renderFilms = () => {
         const category = singleCategory;
         const nominationId = Number(selectedNomination?.nominationId || 0);
         const pickedNominationId = Number(state.picksByCategory?.[category] || 0);
-        const winnerNominationId = Number(state.winnersByCategory?.[category] || 0);
+        const winnerNominationIds = (state.winnersByCategory?.[category] || []).map(Number);
         const locked = Boolean(state.votingLocked);
         const picked = pickedNominationId === nominationId;
-        const isWinner = winnerNominationId === nominationId;
+        const hasWinner = winnerNominationIds.length > 0;
+        const isWinner = winnerNominationIds.includes(nominationId);
 
         pickButton.hidden = locked && !picked;
         pickButton.dataset.filmId = film.id;
@@ -714,11 +716,11 @@ const renderFilms = () => {
         pickButton.dataset.pickResult = 'pending';
         pickButton.disabled = locked;
         pickButton.setAttribute('aria-pressed', picked ? 'true' : 'false');
-        if (picked && winnerNominationId) {
+        if (picked && hasWinner) {
           pickButton.dataset.pickResult = isWinner ? 'correct' : 'incorrect';
         }
         const pickedSuffix =
-          picked && winnerNominationId && !isWinner ? ' ❌' : (picked ? ' ✅' : '');
+          picked && hasWinner && !isWinner ? ' ❌' : (picked ? ' ✅' : '');
         pickButton.textContent = locked
           ? `🔒 My Pick${pickedSuffix}`
           : `My Pick${pickedSuffix}`;
